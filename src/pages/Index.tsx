@@ -134,10 +134,10 @@ const Dashboard = () => {
       {/* Top Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div variants={itemVariants}>
-          <HealthScoreCard score={74} change={5} />
+          <HealthScoreCard />
         </motion.div>
         <motion.div variants={itemVariants}>
-          <CashFlowCard income={85000} expenses={64900} />
+          <CashFlowCard />
         </motion.div>
       </div>
 
