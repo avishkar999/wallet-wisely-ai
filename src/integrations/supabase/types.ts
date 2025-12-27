@@ -14,7 +14,210 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      calendar_events: {
+        Row: {
+          amount: number | null
+          created_at: string
+          event_date: string
+          event_type: string
+          id: string
+          is_recurring: boolean | null
+          notes: string | null
+          related_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          event_date: string
+          event_type: string
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          related_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          id?: string
+          is_recurring?: boolean | null
+          notes?: string | null
+          related_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      debts: {
+        Row: {
+          created_at: string
+          due_date: number | null
+          end_date: string | null
+          id: string
+          interest_rate: number
+          minimum_payment: number
+          name: string
+          notes: string | null
+          outstanding_amount: number
+          principal_amount: number
+          start_date: string | null
+          type: Database["public"]["Enums"]["debt_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: number | null
+          end_date?: string | null
+          id?: string
+          interest_rate?: number
+          minimum_payment?: number
+          name: string
+          notes?: string | null
+          outstanding_amount?: number
+          principal_amount?: number
+          start_date?: string | null
+          type: Database["public"]["Enums"]["debt_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: number | null
+          end_date?: string | null
+          id?: string
+          interest_rate?: number
+          minimum_payment?: number
+          name?: string
+          notes?: string | null
+          outstanding_amount?: number
+          principal_amount?: number
+          start_date?: string | null
+          type?: Database["public"]["Enums"]["debt_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      investments: {
+        Row: {
+          created_at: string
+          current_value: number
+          id: string
+          invested_amount: number
+          name: string
+          nav: number | null
+          notes: string | null
+          purchase_date: string | null
+          type: Database["public"]["Enums"]["investment_type"]
+          units: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          invested_amount?: number
+          name: string
+          nav?: number | null
+          notes?: string | null
+          purchase_date?: string | null
+          type: Database["public"]["Enums"]["investment_type"]
+          units?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: number
+          id?: string
+          invested_amount?: number
+          name?: string
+          nav?: number | null
+          notes?: string | null
+          purchase_date?: string | null
+          type?: Database["public"]["Enums"]["investment_type"]
+          units?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: Database["public"]["Enums"]["transaction_category"]
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          transaction_date: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: Database["public"]["Enums"]["transaction_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          transaction_date?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: Database["public"]["Enums"]["transaction_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          transaction_date?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +226,43 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      debt_type:
+        | "credit_card"
+        | "personal_loan"
+        | "home_loan"
+        | "car_loan"
+        | "education_loan"
+        | "emi"
+        | "other"
+      investment_type:
+        | "mutual_fund"
+        | "stock"
+        | "fixed_deposit"
+        | "recurring_deposit"
+        | "crypto"
+        | "gold"
+        | "bonds"
+        | "other"
+      payment_method:
+        | "upi"
+        | "debit_card"
+        | "credit_card"
+        | "cash"
+        | "neft"
+        | "auto_pay"
+        | "other"
+      transaction_category:
+        | "food"
+        | "shopping"
+        | "transport"
+        | "entertainment"
+        | "bills"
+        | "health"
+        | "recharges"
+        | "education"
+        | "travel"
+        | "income"
+        | "other"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +389,48 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      debt_type: [
+        "credit_card",
+        "personal_loan",
+        "home_loan",
+        "car_loan",
+        "education_loan",
+        "emi",
+        "other",
+      ],
+      investment_type: [
+        "mutual_fund",
+        "stock",
+        "fixed_deposit",
+        "recurring_deposit",
+        "crypto",
+        "gold",
+        "bonds",
+        "other",
+      ],
+      payment_method: [
+        "upi",
+        "debit_card",
+        "credit_card",
+        "cash",
+        "neft",
+        "auto_pay",
+        "other",
+      ],
+      transaction_category: [
+        "food",
+        "shopping",
+        "transport",
+        "entertainment",
+        "bills",
+        "health",
+        "recharges",
+        "education",
+        "travel",
+        "income",
+        "other",
+      ],
+    },
   },
 } as const
