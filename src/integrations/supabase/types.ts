@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      budgets: {
+        Row: {
+          budgeted_amount: number
+          category: string
+          created_at: string
+          id: string
+          month: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budgeted_amount?: number
+          category: string
+          created_at?: string
+          id?: string
+          month: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budgeted_amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          month?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           amount: number | null
@@ -99,6 +129,36 @@ export type Database = {
           principal_amount?: number
           start_date?: string | null
           type?: Database["public"]["Enums"]["debt_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      emergency_fund: {
+        Row: {
+          created_at: string
+          current_amount: number
+          goal_amount: number
+          id: string
+          target_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_amount?: number
+          goal_amount?: number
+          id?: string
+          target_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_amount?: number
+          goal_amount?: number
+          id?: string
+          target_date?: string | null
           updated_at?: string
           user_id?: string
         }

@@ -11,72 +11,18 @@ import {
   Zap,
   ArrowRight,
   Snowflake,
-  Flame
+  Flame,
+  Plus
 } from "lucide-react";
-
-interface Debt {
-  id: string;
-  name: string;
-  type: "credit_card" | "loan" | "emi";
-  outstanding: number;
-  interestRate: number;
-  minimumDue: number;
-  dueDate: string;
-  totalPaid: number;
-  totalAmount: number;
-}
-
-const debts: Debt[] = [
-  {
-    id: "1",
-    name: "HDFC Credit Card",
-    type: "credit_card",
-    outstanding: 45000,
-    interestRate: 36,
-    minimumDue: 2250,
-    dueDate: "Jan 5, 2025",
-    totalPaid: 15000,
-    totalAmount: 60000,
-  },
-  {
-    id: "2",
-    name: "Personal Loan - ICICI",
-    type: "loan",
-    outstanding: 180000,
-    interestRate: 12.5,
-    minimumDue: 8500,
-    dueDate: "Jan 1, 2025",
-    totalPaid: 120000,
-    totalAmount: 300000,
-  },
-  {
-    id: "3",
-    name: "Car EMI - SBI",
-    type: "emi",
-    outstanding: 320000,
-    interestRate: 9.5,
-    minimumDue: 12000,
-    dueDate: "Jan 10, 2025",
-    totalPaid: 280000,
-    totalAmount: 600000,
-  },
-  {
-    id: "4",
-    name: "Axis Credit Card",
-    type: "credit_card",
-    outstanding: 12000,
-    interestRate: 42,
-    minimumDue: 600,
-    dueDate: "Jan 15, 2025",
-    totalPaid: 8000,
-    totalAmount: 20000,
-  },
-];
+import { useDebts, useDebtSummary } from "@/hooks/useDebts";
+import { EmptyState } from "@/components/ui/empty-state";
+import { AddDebtDialog } from "@/components/forms/AddDebtDialog";
+import { useState } from "react";
 
 export function DebtAnalyzer() {
-  const totalDebt = debts.reduce((sum, d) => sum + d.outstanding, 0);
-  const totalMonthlyEMI = debts.reduce((sum, d) => sum + d.minimumDue, 0);
-  const avgInterestRate = debts.reduce((sum, d) => sum + d.interestRate, 0) / debts.length;
+  const { data: debts, isLoading } = useDebts();
+  const { totalDebt, totalMonthly, avgInterest, sortedByInterest, sortedByAmount, debtFreeDate } = useDebtSummary();
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   const formatCurrency = (amount: number) => {
     if (amount >= 100000) {
@@ -92,7 +38,11 @@ export function DebtAnalyzer() {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case "credit_card": return CreditCard;
-      case "loan": return TrendingDown;
+      case "personal_loan": 
+      case "home_loan":
+      case "car_loan":
+      case "education_loan": 
+        return TrendingDown;
       default: return Calendar;
     }
   };
@@ -100,18 +50,66 @@ export function DebtAnalyzer() {
   const getTypeColor = (type: string) => {
     switch (type) {
       case "credit_card": return "hsl(var(--destructive))";
-      case "loan": return "hsl(var(--warning))";
-      default: return "hsl(var(--primary))";
+      case "personal_loan": return "hsl(var(--warning))";
+      case "home_loan": return "hsl(var(--primary))";
+      case "car_loan": return "hsl(var(--accent))";
+      default: return "hsl(var(--muted-foreground))";
     }
   };
 
-  // Sort by interest rate for avalanche method suggestion
-  const sortedByInterest = [...debts].sort((a, b) => b.interestRate - a.interestRate);
-  // Sort by outstanding amount for snowball method
-  const sortedByAmount = [...debts].sort((a, b) => a.outstanding - b.outstanding);
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!debts || debts.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Debt Analyzer</h1>
+            <p className="text-sm text-muted-foreground">Track and manage your debts</p>
+          </div>
+          <Button onClick={() => setShowAddDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Debt
+          </Button>
+        </div>
+        
+        <EmptyState
+          icon={CreditCard}
+          title="No debts tracked"
+          description="Great news! You have no debts to track, or you can add your existing debts to manage them better."
+          action={
+            <Button onClick={() => setShowAddDialog(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Debt
+            </Button>
+          }
+        />
+        
+        <AddDebtDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Debt Analyzer</h1>
+          <p className="text-sm text-muted-foreground">Track and manage your debts</p>
+        </div>
+        <Button onClick={() => setShowAddDialog(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Debt
+        </Button>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <motion.div
@@ -140,9 +138,9 @@ export function DebtAnalyzer() {
             <CardContent className="p-6">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="w-5 h-5 text-warning" />
-                <span className="text-sm text-muted-foreground">Monthly EMI</span>
+                <span className="text-sm text-muted-foreground">Monthly Payment</span>
               </div>
-              <p className="text-3xl font-bold text-foreground">{formatCurrency(totalMonthlyEMI)}</p>
+              <p className="text-3xl font-bold text-foreground">{formatCurrency(totalMonthly)}</p>
               <p className="text-xs text-muted-foreground mt-1">Due this month</p>
             </CardContent>
           </Card>
@@ -159,8 +157,10 @@ export function DebtAnalyzer() {
                 <AlertTriangle className="w-5 h-5 text-destructive" />
                 <span className="text-sm text-muted-foreground">Avg. Interest</span>
               </div>
-              <p className="text-3xl font-bold text-foreground">{avgInterestRate.toFixed(1)}%</p>
-              <p className="text-xs text-destructive mt-1">High interest debt present</p>
+              <p className="text-3xl font-bold text-foreground">{avgInterest.toFixed(1)}%</p>
+              <p className="text-xs text-destructive mt-1">
+                {avgInterest > 15 ? 'High interest debt present' : 'Manageable interest rate'}
+              </p>
             </CardContent>
           </Card>
         </motion.div>
@@ -178,7 +178,9 @@ export function DebtAnalyzer() {
           {debts.map((debt, index) => {
             const Icon = getTypeIcon(debt.type);
             const color = getTypeColor(debt.type);
-            const progress = (debt.totalPaid / debt.totalAmount) * 100;
+            const progress = debt.principal_amount > 0 
+              ? ((debt.principal_amount - debt.outstanding_amount) / debt.principal_amount) * 100 
+              : 0;
 
             return (
               <motion.div
@@ -198,23 +200,29 @@ export function DebtAnalyzer() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground">{debt.name}</p>
-                      <p className="text-xs text-muted-foreground">Due: {debt.dueDate}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Due: Day {debt.due_date || 'N/A'} of each month
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">{formatCurrency(debt.outstanding)}</p>
-                    <p className="text-xs text-destructive">{debt.interestRate}% APR</p>
+                    <p className="text-lg font-bold text-foreground">{formatCurrency(debt.outstanding_amount)}</p>
+                    <p className="text-xs text-destructive">{debt.interest_rate}% APR</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Paid: {formatCurrency(debt.totalPaid)}</span>
+                    <span className="text-muted-foreground">
+                      Paid: {formatCurrency(debt.principal_amount - debt.outstanding_amount)}
+                    </span>
                     <span className="text-muted-foreground">{progress.toFixed(0)}% complete</span>
                   </div>
                   <Progress value={progress} className="h-2" />
                   <div className="flex justify-between items-center pt-2">
-                    <span className="text-xs text-muted-foreground">Min. Due: {formatCurrency(debt.minimumDue)}</span>
+                    <span className="text-xs text-muted-foreground">
+                      Min. Due: {formatCurrency(debt.minimum_payment)}
+                    </span>
                     <Button variant="outline" size="sm">Pay Now</Button>
                   </div>
                 </div>
@@ -250,12 +258,9 @@ export function DebtAnalyzer() {
                     <span className="text-foreground">
                       {index + 1}. {debt.name}
                     </span>
-                    <span className="text-destructive font-medium">{debt.interestRate}%</span>
+                    <span className="text-destructive font-medium">{debt.interest_rate}%</span>
                   </div>
                 ))}
-              </div>
-              <div className="pt-2 border-t border-border">
-                <p className="text-xs text-success">Potential savings: ₹18,500 in interest</p>
               </div>
               <Button variant="outline" className="w-full">
                 Use This Strategy <ArrowRight className="w-4 h-4 ml-2" />
@@ -288,12 +293,9 @@ export function DebtAnalyzer() {
                     <span className="text-foreground">
                       {index + 1}. {debt.name}
                     </span>
-                    <span className="text-primary font-medium">{formatCurrency(debt.outstanding)}</span>
+                    <span className="text-primary font-medium">{formatCurrency(debt.outstanding_amount)}</span>
                   </div>
                 ))}
-              </div>
-              <div className="pt-2 border-t border-border">
-                <p className="text-xs text-primary">Clear first debt in: 2 months</p>
               </div>
               <Button variant="outline" className="w-full">
                 Use This Strategy <ArrowRight className="w-4 h-4 ml-2" />
@@ -304,33 +306,39 @@ export function DebtAnalyzer() {
       </div>
 
       {/* Debt-Free Predictor */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <Card variant="glow" className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-success/10 to-primary/10" />
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Target className="w-5 h-5 text-success" />
-                  <span className="text-sm font-medium text-foreground">Debt-Free Date</span>
+      {debtFreeDate && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card variant="glow" className="relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-success/10 to-primary/10" />
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Target className="w-5 h-5 text-success" />
+                    <span className="text-sm font-medium text-foreground">Estimated Debt-Free Date</span>
+                  </div>
+                  <p className="text-3xl font-bold text-foreground">
+                    {debtFreeDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    At current payment pace
+                  </p>
                 </div>
-                <p className="text-3xl font-bold text-foreground">March 2027</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  At current pace • Pay ₹5,000 extra/month to finish by December 2026
-                </p>
+                <Button>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Optimize My Plan
+                </Button>
               </div>
-              <Button>
-                <Zap className="w-4 h-4 mr-2" />
-                Optimize My Plan
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      <AddDebtDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
     </div>
   );
 }

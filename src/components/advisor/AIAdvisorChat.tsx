@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sparkles, Send, User, Bot, TrendingUp, CreditCard, PiggyBank } from "lucide-react";
+import { useFinancialSummary } from "@/hooks/useTransactions";
+import { useDebtSummary } from "@/hooks/useDebts";
+import { useInvestmentSummary } from "@/hooks/useInvestments";
 
 interface Message {
   id: string;
@@ -18,17 +21,26 @@ const suggestedQuestions = [
   { text: "How to clear debt faster?", icon: CreditCard },
 ];
 
-const initialMessages: Message[] = [
-  {
-    id: "1",
-    role: "assistant",
-    content: "Hi! I'm your AI Financial Advisor. I've analyzed your financial data and I'm here to help you make smarter money decisions. What would you like to know?",
-    timestamp: new Date(),
-  },
-];
-
 export function AIAdvisorChat() {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const { totalIncome, totalExpenses, savingsRate, byCategory } = useFinancialSummary();
+  const { totalDebt, avgInterest, totalMonthly } = useDebtSummary();
+  const { totalValue, returnPercentage } = useInvestmentSummary();
+
+  const getInitialMessage = () => {
+    if (totalIncome === 0 && totalExpenses === 0 && totalDebt === 0 && totalValue === 0) {
+      return "Hi! I'm your AI Financial Advisor. It looks like you're just getting started. Add some transactions, investments, or debts, and I'll provide personalized insights to help you make smarter money decisions!";
+    }
+    return `Hi! I'm your AI Financial Advisor. I can see you have ${totalIncome > 0 ? `₹${(totalIncome / 1000).toFixed(0)}K monthly income` : 'no income recorded'}, ${totalValue > 0 ? `₹${(totalValue / 100000).toFixed(1)}L in investments` : 'no investments'}, and ${totalDebt > 0 ? `₹${(totalDebt / 100000).toFixed(1)}L in debt` : 'no debt'}. What would you like to know about your finances?`;
+  };
+
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      role: "assistant",
+      content: getInitialMessage(),
+      timestamp: new Date(),
+    },
+  ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -41,6 +53,50 @@ export function AIAdvisorChat() {
     scrollToBottom();
   }, [messages]);
 
+  const generateResponse = (question: string): string => {
+    const q = question.toLowerCase();
+
+    // Expense-related questions
+    if (q.includes("expense") || q.includes("spending") || q.includes("reduce")) {
+      if (byCategory.length === 0) {
+        return "You haven't recorded any expenses yet. Start adding your daily expenses to get personalized spending insights!";
+      }
+      const topCategories = byCategory.slice(0, 3);
+      const suggestions = topCategories.map(c => 
+        `${c.category}: ₹${c.amount.toLocaleString('en-IN')} (${c.percentage}%)`
+      ).join(', ');
+      return `Based on your spending patterns, your top expense categories are: ${suggestions}. Consider setting budgets for each category and tracking against them. A good rule is the 50/30/20 budget: 50% needs, 30% wants, 20% savings.`;
+    }
+
+    // SIP/Investment questions
+    if (q.includes("sip") || q.includes("invest")) {
+      if (totalValue === 0) {
+        return "You haven't added any investments yet. Start tracking your investments to get personalized advice on SIP amounts and portfolio allocation!";
+      }
+      const monthlyInvestmentCapacity = Math.max(0, (totalIncome - totalExpenses - totalMonthly) * 0.5);
+      return `Your current portfolio is worth ₹${(totalValue / 100000).toFixed(2)}L with ${returnPercentage >= 0 ? 'a gain' : 'a loss'} of ${Math.abs(returnPercentage).toFixed(1)}%. Based on your cash flow, you could potentially invest up to ₹${monthlyInvestmentCapacity.toLocaleString('en-IN')} more per month. Consider diversifying across equity, debt, and gold in a 60:30:10 ratio for balanced growth.`;
+    }
+
+    // Debt-related questions
+    if (q.includes("debt") || q.includes("loan") || q.includes("emi")) {
+      if (totalDebt === 0) {
+        return "Great news! You don't have any recorded debts. Keep it up! If you do take loans, remember to prioritize paying off high-interest debt first.";
+      }
+      return `Your total debt is ₹${(totalDebt / 100000).toFixed(1)}L with an average interest rate of ${avgInterest.toFixed(1)}%. Your monthly EMI commitment is ₹${totalMonthly.toLocaleString('en-IN')}. I recommend the avalanche method - pay minimum on all debts, then put extra money towards the highest interest rate debt. This saves the most on interest over time.`;
+    }
+
+    // Savings questions
+    if (q.includes("saving") || q.includes("save")) {
+      if (savingsRate <= 0) {
+        return "Your current savings rate is 0% or negative. Try to identify non-essential expenses that can be reduced. Start with small goals - even saving 5% of your income is a good beginning!";
+      }
+      return `Your current savings rate is ${savingsRate}%. Financial experts recommend saving at least 20% of your income. ${savingsRate >= 20 ? "You're doing great! Consider investing your surplus in mutual funds or fixed deposits for better returns." : `To reach 20%, try reducing discretionary spending by ₹${((0.20 - savingsRate/100) * totalIncome).toLocaleString('en-IN')} per month.`}`;
+    }
+
+    // Default response
+    return "I can help you with questions about your expenses, investments, debts, and savings. What specific aspect of your finances would you like to explore?";
+  };
+
   const handleSend = async () => {
     if (!input.trim()) return;
 
@@ -52,28 +108,24 @@ export function AIAdvisorChat() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = input;
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI response
+    // Simulate AI thinking time
     setTimeout(() => {
-      const responses = [
-        "Based on your spending patterns, I recommend focusing on reducing your food expenses by 20%. You've been averaging ₹12,500 per month, which is above your budget. Try meal prepping on weekends!",
-        "Looking at your cash flow, you have room to increase your SIP by ₹3,000 per month. This could help you accumulate an additional ₹5.4L over 5 years with compound growth.",
-        "Your debt-to-income ratio is healthy at 18%. However, I suggest prioritizing your credit card payment as it has a 36% APR. Paying ₹5,000 extra monthly could save you ₹12,000 in interest.",
-        "Great question! Based on your goals and risk profile, I'd suggest a 60-30-10 split: 60% in equity mutual funds, 30% in debt instruments, and 10% in gold for diversification.",
-      ];
+      const response = generateResponse(currentInput);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: responses[Math.floor(Math.random() * responses.length)],
+        content: response,
         timestamp: new Date(),
       };
 
       setMessages((prev) => [...prev, aiMessage]);
       setIsTyping(false);
-    }, 1500);
+    }, 1000);
   };
 
   const handleQuestionClick = (question: string) => {
@@ -90,7 +142,7 @@ export function AIAdvisorChat() {
             </div>
             <div>
               <h2 className="text-lg font-semibold">AI Financial Advisor</h2>
-              <p className="text-xs text-muted-foreground">Powered by advanced AI • Available 24/7</p>
+              <p className="text-xs text-muted-foreground">Powered by your financial data • Available 24/7</p>
             </div>
             <div className="ml-auto flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
