@@ -11,6 +11,8 @@ import { Constants } from "@/integrations/supabase/types";
 
 interface AddDebtDialogProps {
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const debtTypes = Constants.public.Enums.debt_type;
@@ -25,8 +27,12 @@ const typeLabels: Record<string, string> = {
   other: "Other",
 };
 
-export function AddDebtDialog({ trigger }: AddDebtDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddDebtDialog({ trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange }: AddDebtDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (controlledOnOpenChange || (() => {})) : setInternalOpen;
   const [name, setName] = useState("");
   const [type, setType] = useState<string>("credit_card");
   const [principalAmount, setPrincipalAmount] = useState("");
@@ -92,14 +98,16 @@ export function AddDebtDialog({ trigger }: AddDebtDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Debt/Loan
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Debt/Loan
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Debt/Loan</DialogTitle>

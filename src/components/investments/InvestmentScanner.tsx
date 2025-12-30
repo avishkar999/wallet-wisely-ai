@@ -18,7 +18,15 @@ import { useState } from "react";
 
 export function InvestmentScanner() {
   const { data: investments, isLoading } = useInvestments();
-  const { totalValue, totalInvested, totalReturn, returnPercentage, byType } = useInvestmentSummary();
+  const { totalCurrentValue: totalValue, totalInvested, totalGain: totalReturn, overallChangePercent: returnPercentage, byType: byTypeRecord } = useInvestmentSummary();
+  
+  // Convert byType record to array format
+  const byType = Object.entries(byTypeRecord).map(([type, data]) => ({
+    type,
+    value: data.current,
+    invested: data.invested,
+    count: data.count
+  }));
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   const formatCurrency = (amount: number) => {

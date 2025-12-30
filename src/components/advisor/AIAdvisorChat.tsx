@@ -22,9 +22,16 @@ const suggestedQuestions = [
 ];
 
 export function AIAdvisorChat() {
-  const { totalIncome, totalExpenses, savingsRate, byCategory } = useFinancialSummary();
-  const { totalDebt, avgInterest, totalMonthly } = useDebtSummary();
-  const { totalValue, returnPercentage } = useInvestmentSummary();
+  const { income: totalIncome, expenses: totalExpenses, savingsRate, categoryTotals } = useFinancialSummary();
+  const { totalDebt, avgInterestRate: avgInterest, totalMonthlyPayment: totalMonthly } = useDebtSummary();
+  const { totalCurrentValue: totalValue, overallChangePercent: returnPercentage } = useInvestmentSummary();
+  
+  // Convert categoryTotals to array format
+  const byCategory = Object.entries(categoryTotals).map(([category, amount]) => ({
+    category,
+    amount,
+    percentage: totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0
+  }));
 
   const getInitialMessage = () => {
     if (totalIncome === 0 && totalExpenses === 0 && totalDebt === 0 && totalValue === 0) {

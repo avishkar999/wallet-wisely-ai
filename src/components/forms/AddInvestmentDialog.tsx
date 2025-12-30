@@ -11,6 +11,8 @@ import { Constants } from "@/integrations/supabase/types";
 
 interface AddInvestmentDialogProps {
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const investmentTypes = Constants.public.Enums.investment_type;
@@ -26,8 +28,12 @@ const typeLabels: Record<string, string> = {
   other: "Other",
 };
 
-export function AddInvestmentDialog({ trigger }: AddInvestmentDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddInvestmentDialog({ trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange }: AddInvestmentDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (controlledOnOpenChange || (() => {})) : setInternalOpen;
   const [name, setName] = useState("");
   const [type, setType] = useState<string>("mutual_fund");
   const [investedAmount, setInvestedAmount] = useState("");
@@ -90,14 +96,16 @@ export function AddInvestmentDialog({ trigger }: AddInvestmentDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Investment
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Investment
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Investment</DialogTitle>
