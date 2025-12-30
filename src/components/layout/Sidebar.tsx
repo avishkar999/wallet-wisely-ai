@@ -7,10 +7,13 @@ import {
   MessageSquare, 
   Settings,
   ChevronLeft,
-  Sparkles
+  Sparkles,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface SidebarProps {
   activeTab: string;
@@ -29,6 +32,17 @@ const navItems = [
 ];
 
 export function Sidebar({ activeTab, onTabChange, isCollapsed, onToggle }: SidebarProps) {
+  const { data: profile } = useProfile();
+  const { user, signOut } = useAuth();
+
+  const displayName = profile?.display_name || user?.email?.split('@')[0] || 'User';
+  const initials = displayName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
   return (
     <motion.aside
       initial={{ width: 280 }}
@@ -111,21 +125,33 @@ export function Sidebar({ activeTab, onTabChange, isCollapsed, onToggle }: Sideb
       </nav>
 
       {/* User Profile */}
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-sidebar-border space-y-2">
         <div className={cn(
           "flex items-center gap-3 p-3 rounded-xl bg-secondary/50",
           isCollapsed && "justify-center"
         )}>
           <div className="w-10 h-10 rounded-full bg-gradient-accent flex items-center justify-center text-accent-foreground font-semibold">
-            JP
+            {initials}
           </div>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">John Parker</p>
-              <p className="text-xs text-muted-foreground">Premium Member</p>
+              <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
           )}
         </div>
+        
+        {!isCollapsed && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start text-muted-foreground hover:text-foreground"
+            onClick={signOut}
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign Out
+          </Button>
+        )}
       </div>
     </motion.aside>
   );

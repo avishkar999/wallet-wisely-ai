@@ -1,41 +1,89 @@
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Sparkles, ArrowRight, TrendingDown, AlertTriangle, Lightbulb } from "lucide-react";
+import { Sparkles, ArrowRight, TrendingDown, AlertTriangle, Lightbulb, PiggyBank } from "lucide-react";
+import { useFinancialSummary } from "@/hooks/useTransactions";
+import { useDebtSummary } from "@/hooks/useDebts";
+import { useInvestmentSummary } from "@/hooks/useInvestments";
 
 interface Insight {
-  type: "warning" | "suggestion" | "alert";
+  type: "warning" | "suggestion" | "alert" | "success";
   title: string;
   description: string;
   action: string;
 }
 
-const insights: Insight[] = [
-  {
-    type: "warning",
-    title: "Overspending on Food",
-    description: "You've spent 40% more on food this month compared to last month",
-    action: "View breakdown"
-  },
-  {
-    type: "suggestion",
-    title: "Increase SIP by ₹2,000",
-    description: "Based on your cash flow, you can increase monthly SIP investment",
-    action: "Adjust SIP"
-  },
-  {
-    type: "alert",
-    title: "Credit Card Due",
-    description: "₹24,500 due in 5 days. Pay early to avoid interest charges",
-    action: "Pay now"
-  }
-];
-
 export function AIInsightCard() {
+  const { totalExpenses, savingsRate, byCategory } = useFinancialSummary();
+  const { totalDebt, avgInterest } = useDebtSummary();
+  const { returnPercentage } = useInvestmentSummary();
+
+  // Generate insights based on real data
+  const insights: Insight[] = [];
+
+  // Check if any category exceeds 30% of total expenses
+  const highSpendingCategory = byCategory.find(c => c.percentage > 30 && c.category !== 'income');
+  if (highSpendingCategory) {
+    insights.push({
+      type: "warning",
+      title: `High spending on ${highSpendingCategory.category}`,
+      description: `${highSpendingCategory.percentage}% of your expenses go to ${highSpendingCategory.category}`,
+      action: "View breakdown"
+    });
+  }
+
+  // Check savings rate
+  if (savingsRate < 10 && totalExpenses > 0) {
+    insights.push({
+      type: "suggestion",
+      title: "Low savings rate",
+      description: `Your savings rate is ${savingsRate}%. Consider saving at least 20% of income`,
+      action: "Set budget"
+    });
+  } else if (savingsRate >= 20) {
+    insights.push({
+      type: "success",
+      title: "Great savings rate!",
+      description: `You're saving ${savingsRate}% of your income. Keep it up!`,
+      action: "View details"
+    });
+  }
+
+  // Check high interest debt
+  if (avgInterest > 15 && totalDebt > 0) {
+    insights.push({
+      type: "alert",
+      title: "High interest debt",
+      description: `Average interest rate of ${avgInterest.toFixed(1)}%. Consider debt consolidation`,
+      action: "View debts"
+    });
+  }
+
+  // Investment performance
+  if (returnPercentage < 0) {
+    insights.push({
+      type: "warning",
+      title: "Portfolio underperforming",
+      description: `Your investments are down ${Math.abs(returnPercentage).toFixed(1)}%`,
+      action: "Review portfolio"
+    });
+  }
+
+  // If no insights, show a default welcome message
+  if (insights.length === 0) {
+    insights.push({
+      type: "suggestion",
+      title: "Start tracking",
+      description: "Add transactions to get personalized insights",
+      action: "Add transaction"
+    });
+  }
+
   const getIcon = (type: string) => {
     switch (type) {
       case "warning": return TrendingDown;
       case "alert": return AlertTriangle;
+      case "success": return PiggyBank;
       default: return Lightbulb;
     }
   };
@@ -44,6 +92,7 @@ export function AIInsightCard() {
     switch (type) {
       case "warning": return "hsl(var(--warning))";
       case "alert": return "hsl(var(--destructive))";
+      case "success": return "hsl(var(--success))";
       default: return "hsl(var(--primary))";
     }
   };
@@ -64,7 +113,7 @@ export function AIInsightCard() {
         </div>
 
         <div className="space-y-3">
-          {insights.map((insight, index) => {
+          {insights.slice(0, 3).map((insight, index) => {
             const Icon = getIcon(insight.type);
             const color = getColor(insight.type);
             
