@@ -13,6 +13,8 @@ import { Constants } from "@/integrations/supabase/types";
 interface AddTransactionDialogProps {
   defaultType?: "income" | "expense";
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const categories = Constants.public.Enums.transaction_category;
@@ -42,8 +44,12 @@ const methodLabels: Record<string, string> = {
   other: "Other",
 };
 
-export function AddTransactionDialog({ defaultType = "expense", trigger }: AddTransactionDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddTransactionDialog({ defaultType = "expense", trigger, open: controlledOpen, onOpenChange: controlledOnOpenChange }: AddTransactionDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (controlledOnOpenChange || (() => {})) : setInternalOpen;
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"income" | "expense">(defaultType);
@@ -102,14 +108,16 @@ export function AddTransactionDialog({ defaultType = "expense", trigger }: AddTr
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add {defaultType === "income" ? "Income" : "Expense"}
-          </Button>
-        )}
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Add {defaultType === "income" ? "Income" : "Expense"}
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Transaction</DialogTitle>

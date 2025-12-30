@@ -14,9 +14,16 @@ interface Insight {
 }
 
 export function AIInsightCard() {
-  const { totalExpenses, savingsRate, byCategory } = useFinancialSummary();
-  const { totalDebt, avgInterest } = useDebtSummary();
-  const { returnPercentage } = useInvestmentSummary();
+  const { expenses: totalExpenses, savingsRate, categoryTotals } = useFinancialSummary();
+  const { totalDebt, avgInterestRate: avgInterest } = useDebtSummary();
+  const { overallChangePercent: returnPercentage } = useInvestmentSummary();
+  
+  // Convert categoryTotals to array format
+  const byCategory = Object.entries(categoryTotals).map(([category, amount]) => ({
+    category,
+    amount,
+    percentage: totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0
+  }));
 
   // Generate insights based on real data
   const insights: Insight[] = [];

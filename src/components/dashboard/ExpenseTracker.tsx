@@ -22,7 +22,7 @@ import { useState } from "react";
 import { format, subMonths, startOfMonth, endOfMonth } from "date-fns";
 
 export function ExpenseTracker() {
-  const { totalIncome, totalExpenses, balance, savingsRate } = useFinancialSummary();
+  const { income: totalIncome, expenses: totalExpenses, balance, savingsRate } = useFinancialSummary();
   const { data: transactions, isLoading } = useTransactions();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");

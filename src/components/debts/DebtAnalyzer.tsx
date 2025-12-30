@@ -21,7 +21,7 @@ import { useState } from "react";
 
 export function DebtAnalyzer() {
   const { data: debts, isLoading } = useDebts();
-  const { totalDebt, totalMonthly, avgInterest, sortedByInterest, sortedByAmount, debtFreeDate } = useDebtSummary();
+  const { totalDebt, totalMonthlyPayment: totalMonthly, avgInterestRate: avgInterest, sortedByInterest, sortedByAmount, debtFreeDate } = useDebtSummary();
   const [showAddDialog, setShowAddDialog] = useState(false);
 
   const formatCurrency = (amount: number) => {
