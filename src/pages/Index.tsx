@@ -13,6 +13,7 @@ import { InvestmentScanner } from "@/components/investments/InvestmentScanner";
 import { DebtAnalyzer } from "@/components/debts/DebtAnalyzer";
 import { AIAdvisorChat } from "@/components/advisor/AIAdvisorChat";
 import { SettingsPage } from "@/pages/Settings";
+import { CalendarPage } from "@/pages/Calendar";
 import { Bell, Search, Calendar, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,8 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activeTab) {
+      case "calendar":
+        return <CalendarPage />;
       case "expenses":
         return <ExpenseTracker />;
       case "investments":
