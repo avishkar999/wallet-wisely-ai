@@ -9,16 +9,30 @@ export function useFinancialHealthScore() {
 
   const isLoading = transactionsLoading || investmentsLoading || debtsLoading;
 
+  // Check if user has any data at all
+  const hasAnyData = income > 0 || expenses > 0 || totalCurrentValue > 0 || totalDebt > 0;
+
+  // If no data exists, score is 0
+  if (!hasAnyData) {
+    return {
+      score: 0,
+      label: "No Data",
+      savingsRate: 0,
+      debtRatio: 0,
+      emergencyMonths: 0,
+      isLoading,
+      hasData: false,
+    };
+  }
+
   // Calculate score components (0-100 each)
   let score = 0;
-  let componentsCount = 0;
 
   // 1. Savings Rate Score (0-25 points)
   // 20%+ savings rate = 25 points
   if (income > 0) {
     const savingsScore = Math.min(25, (savingsRate / 20) * 25);
     score += savingsScore;
-    componentsCount++;
   }
 
   // 2. Debt-to-Income Ratio (0-25 points)
@@ -27,10 +41,8 @@ export function useFinancialHealthScore() {
     const dtiRatio = (totalMonthlyPayment / income) * 100;
     const dtiScore = Math.max(0, 25 - (dtiRatio / 2));
     score += dtiScore;
-    componentsCount++;
   } else if (totalDebt === 0) {
     score += 25; // No income but also no debt
-    componentsCount++;
   }
 
   // 3. Emergency Fund (0-25 points)
@@ -39,24 +51,18 @@ export function useFinancialHealthScore() {
     const monthsCovered = totalCurrentValue / expenses;
     const emergencyScore = Math.min(25, (monthsCovered / 6) * 25);
     score += emergencyScore;
-    componentsCount++;
   } else if (totalCurrentValue > 0) {
     score += 25; // Has investments, no expenses tracked yet
-    componentsCount++;
   }
 
   // 4. Investment Habit (0-25 points)
-  // Having any investments = base 15 points
-  // Diversified investments = up to 25 points
+  // Having any investments = 20 points
   if (totalCurrentValue > 0) {
     score += 20;
-    componentsCount++;
-  } else {
-    componentsCount++; // Still count it even if 0
   }
 
-  // Normalize score to 0-100
-  const finalScore = componentsCount > 0 ? Math.round(score) : 0;
+  // Round the score
+  const finalScore = Math.round(score);
 
   // Calculate individual metrics for display
   const debtRatio = income > 0 ? Math.round((totalMonthlyPayment / income) * 100) : 0;
