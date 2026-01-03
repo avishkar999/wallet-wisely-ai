@@ -12,13 +12,23 @@ import { ExpenseTracker } from "@/components/dashboard/ExpenseTracker";
 import { InvestmentScanner } from "@/components/investments/InvestmentScanner";
 import { DebtAnalyzer } from "@/components/debts/DebtAnalyzer";
 import { AIAdvisorChat } from "@/components/advisor/AIAdvisorChat";
-import { Bell, Search, Calendar } from "lucide-react";
+import { SettingsPage } from "@/pages/Settings";
+import { Bell, Search, Calendar, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -31,14 +41,7 @@ const Index = () => {
       case "advisor":
         return <AIAdvisorChat />;
       case "settings":
-        return (
-          <div className="flex items-center justify-center h-[60vh]">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Settings</h2>
-              <p className="text-muted-foreground">Coming soon...</p>
-            </div>
-          </div>
-        );
+        return <SettingsPage />;
       default:
         return <Dashboard />;
     }
@@ -46,41 +49,62 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        isCollapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-      />
+      {/* Mobile Sidebar */}
+      {isMobile ? (
+        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+          <SheetContent side="left" className="p-0 w-[280px]">
+            <Sidebar
+              activeTab={activeTab}
+              onTabChange={handleTabChange}
+              isCollapsed={false}
+              onToggle={() => {}}
+            />
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Sidebar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          isCollapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+      )}
       
       <main 
         className="transition-all duration-300"
-        style={{ marginLeft: sidebarCollapsed ? 80 : 280 }}
+        style={{ marginLeft: isMobile ? 0 : (sidebarCollapsed ? 80 : 280) }}
       >
         {/* Top Bar */}
         <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div>
-              <motion.h1 
-                key={activeTab}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-xl font-semibold text-foreground capitalize"
-              >
-                {activeTab === "advisor" ? "AI Financial Advisor" : activeTab}
-              </motion.h1>
-              <p className="text-sm text-muted-foreground">
-                {new Date().toLocaleDateString('en-IN', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </p>
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-3">
+              {isMobile && (
+                <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(true)}>
+                  <Menu className="w-5 h-5" />
+                </Button>
+              )}
+              <div>
+                <motion.h1 
+                  key={activeTab}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-lg sm:text-xl font-semibold text-foreground capitalize"
+                >
+                  {activeTab === "advisor" ? "AI Financial Advisor" : activeTab}
+                </motion.h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  {new Date().toLocaleDateString('en-IN', { 
+                    weekday: isMobile ? 'short' : 'long', 
+                    year: 'numeric', 
+                    month: isMobile ? 'short' : 'long', 
+                    day: 'numeric' 
+                  })}
+                </p>
+              </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="relative hidden md:block">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="relative hidden lg:block">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
                   placeholder="Search..." 
@@ -91,16 +115,16 @@ const Index = () => {
                 <Bell className="w-5 h-5" />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" className="hidden sm:flex">
                 <Calendar className="w-4 h-4 mr-2" />
-                Dec 2024
+                {new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
               </Button>
             </div>
           </div>
         </header>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {renderContent()}
         </div>
       </main>
