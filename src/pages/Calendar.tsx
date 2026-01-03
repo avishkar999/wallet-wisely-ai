@@ -6,52 +6,67 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTransactions } from "@/hooks/useTransactions";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { useRecurringTransactions } from "@/hooks/useRecurringTransactions";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, TrendingUp, TrendingDown, Wallet, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AddRecurringDialog } from "@/components/calendar/AddRecurringDialog";
+import { RecurringList } from "@/components/calendar/RecurringList";
+import { UpcomingReminders } from "@/components/calendar/UpcomingReminders";
 
 export function CalendarPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const { data: transactions = [], isLoading } = useTransactions();
+  const { data: recurring = [] } = useRecurringTransactions();
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  // Get first day of week offset (0 = Sunday)
   const startDayOffset = monthStart.getDay();
   const emptyDays = Array(startDayOffset).fill(null);
 
-  // Group transactions by date
   const transactionsByDate = useMemo(() => {
     const grouped: Record<string, typeof transactions> = {};
     transactions.forEach((t) => {
       const dateKey = t.transaction_date;
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = [];
-      }
+      if (!grouped[dateKey]) grouped[dateKey] = [];
       grouped[dateKey].push(t);
     });
     return grouped;
   }, [transactions]);
 
-  // Get transactions for selected date
+  const recurringByDate = useMemo(() => {
+    const grouped: Record<string, typeof recurring> = {};
+    recurring.filter(r => r.is_active).forEach((r) => {
+      const dateKey = r.next_due_date;
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(r);
+    });
+    return grouped;
+  }, [recurring]);
+
   const selectedDateTransactions = useMemo(() => {
     if (!selectedDate) return [];
     const dateKey = format(selectedDate, "yyyy-MM-dd");
     return transactionsByDate[dateKey] || [];
   }, [selectedDate, transactionsByDate]);
 
-  // Calculate daily summary
+  const selectedDateRecurring = useMemo(() => {
+    if (!selectedDate) return [];
+    const dateKey = format(selectedDate, "yyyy-MM-dd");
+    return recurringByDate[dateKey] || [];
+  }, [selectedDate, recurringByDate]);
+
   const getDaySummary = (date: Date) => {
     const dateKey = format(date, "yyyy-MM-dd");
     const dayTransactions = transactionsByDate[dateKey] || [];
+    const dayRecurring = recurringByDate[dateKey] || [];
     const income = dayTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + Number(t.amount), 0);
     const expense = dayTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + Number(t.amount), 0);
-    return { income, expense, count: dayTransactions.length };
+    return { income, expense, count: dayTransactions.length, hasRecurring: dayRecurring.length > 0 };
   };
 
-  // Monthly totals
   const monthlyTotals = useMemo(() => {
     const monthStr = format(currentMonth, "yyyy-MM");
     let income = 0;
@@ -98,6 +113,8 @@ export function CalendarPage() {
       animate="visible"
       className="space-y-6"
     >
+      <UpcomingReminders />
+
       {/* Monthly Summary */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <motion.div variants={itemVariants}>
@@ -148,21 +165,24 @@ export function CalendarPage() {
         <motion.div variants={itemVariants} className="lg:col-span-2">
           <Card>
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <CardTitle className="flex items-center gap-2">
                   <CalendarIcon className="w-5 h-5 text-primary" />
                   {format(currentMonth, "MMMM yyyy")}
                 </CardTitle>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(new Date())}>
-                    Today
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
+                <div className="flex items-center gap-2">
+                  <AddRecurringDialog />
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(new Date())}>
+                      Today
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -204,23 +224,24 @@ export function CalendarPage() {
                       <span className={cn("text-sm font-medium", isToday && !isSelected && "text-primary")}>
                         {format(day, "d")}
                       </span>
-                      {hasTransactions && (
-                        <div className="flex gap-0.5 mt-1">
-                          {summary.income > 0 && (
-                            <div className={cn("w-1.5 h-1.5 rounded-full", isSelected ? "bg-primary-foreground" : "bg-success")} />
-                          )}
-                          {summary.expense > 0 && (
-                            <div className={cn("w-1.5 h-1.5 rounded-full", isSelected ? "bg-primary-foreground" : "bg-destructive")} />
-                          )}
-                        </div>
-                      )}
+                      <div className="flex gap-0.5 mt-1">
+                        {summary.income > 0 && (
+                          <div className={cn("w-1.5 h-1.5 rounded-full", isSelected ? "bg-primary-foreground" : "bg-success")} />
+                        )}
+                        {summary.expense > 0 && (
+                          <div className={cn("w-1.5 h-1.5 rounded-full", isSelected ? "bg-primary-foreground" : "bg-destructive")} />
+                        )}
+                        {summary.hasRecurring && (
+                          <div className={cn("w-1.5 h-1.5 rounded-full", isSelected ? "bg-primary-foreground" : "bg-warning")} />
+                        )}
+                      </div>
                     </motion.button>
                   );
                 })}
               </div>
 
               {/* Legend */}
-              <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-border">
+              <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-border flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-success" />
                   <span className="text-xs text-muted-foreground">Income</span>
@@ -229,35 +250,60 @@ export function CalendarPage() {
                   <div className="w-2 h-2 rounded-full bg-destructive" />
                   <span className="text-xs text-muted-foreground">Expense</span>
                 </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-warning" />
+                  <span className="text-xs text-muted-foreground">Bill Due</span>
+                </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Selected Day Details */}
-        <motion.div variants={itemVariants}>
-          <Card className="h-full">
+        {/* Right Column */}
+        <motion.div variants={itemVariants} className="space-y-6">
+          {/* Recurring Transactions */}
+          <RecurringList />
+
+          {/* Selected Day Details */}
+          <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">
                 {selectedDate ? format(selectedDate, "EEEE, MMM d") : "Select a date"}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {selectedDateTransactions.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <CalendarIcon className="w-10 h-10 text-muted-foreground mb-3" />
+              {selectedDateTransactions.length === 0 && selectedDateRecurring.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-6 text-center">
+                  <CalendarIcon className="w-8 h-8 text-muted-foreground mb-2" />
                   <p className="text-sm text-muted-foreground">No transactions on this day</p>
                 </div>
               ) : (
-                <ScrollArea className="h-[400px] pr-2">
+                <ScrollArea className="h-[250px] pr-2">
                   <div className="space-y-3">
+                    {selectedDateRecurring.map((item) => (
+                      <div key={item.id} className="p-3 rounded-lg bg-warning/10 border border-warning/30">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <Bell className="w-3 h-3 text-warning" />
+                              <p className="font-medium text-sm truncate">{item.title}</p>
+                            </div>
+                            <Badge variant="outline" className="mt-1 text-xs capitalize">
+                              {item.category.replace("_", " ")}
+                            </Badge>
+                          </div>
+                          <span className={cn(
+                            "font-semibold text-sm whitespace-nowrap",
+                            item.type === "income" ? "text-success" : "text-destructive"
+                          )}>
+                            {item.type === "income" ? "+" : "-"}
+                            {formatCurrency(Number(item.amount))}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                     {selectedDateTransactions.map((transaction) => (
-                      <motion.div
-                        key={transaction.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="p-3 rounded-lg bg-secondary/50"
-                      >
+                      <div key={transaction.id} className="p-3 rounded-lg bg-secondary/50">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{transaction.name}</p>
@@ -273,18 +319,12 @@ export function CalendarPage() {
                             {formatCurrency(Number(transaction.amount))}
                           </span>
                         </div>
-                        {transaction.description && (
-                          <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
-                            {transaction.description}
-                          </p>
-                        )}
-                      </motion.div>
+                      </div>
                     ))}
                   </div>
                 </ScrollArea>
               )}
 
-              {/* Daily Summary */}
               {selectedDate && selectedDateTransactions.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-border space-y-2">
                   <div className="flex justify-between text-sm">
