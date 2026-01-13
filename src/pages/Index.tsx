@@ -15,6 +15,7 @@ import { AIAdvisorChat } from "@/components/advisor/AIAdvisorChat";
 import { SettingsPage } from "@/pages/Settings";
 import { CalendarPage } from "@/pages/Calendar";
 import { DailySpendingTracker } from "@/components/tracker/DailySpendingTracker";
+import { BudgetManager } from "@/components/budget/BudgetManager";
 import { Bell, Search, Calendar, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,8 @@ const Index = () => {
     switch (activeTab) {
       case "tracker":
         return <DailySpendingTracker />;
+      case "budget":
+        return <BudgetManager />;
       case "calendar":
         return <CalendarPage />;
       case "expenses":
