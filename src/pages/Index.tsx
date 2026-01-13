@@ -14,6 +14,7 @@ import { DebtAnalyzer } from "@/components/debts/DebtAnalyzer";
 import { AIAdvisorChat } from "@/components/advisor/AIAdvisorChat";
 import { SettingsPage } from "@/pages/Settings";
 import { CalendarPage } from "@/pages/Calendar";
+import { DailySpendingTracker } from "@/components/tracker/DailySpendingTracker";
 import { Bell, Search, Calendar, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +34,8 @@ const Index = () => {
 
   const renderContent = () => {
     switch (activeTab) {
+      case "tracker":
+        return <DailySpendingTracker />;
       case "calendar":
         return <CalendarPage />;
       case "expenses":
