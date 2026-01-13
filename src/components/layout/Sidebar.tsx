@@ -10,7 +10,8 @@ import {
   Sparkles,
   LogOut,
   CalendarDays,
-  Receipt
+  Receipt,
+  Target
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ interface SidebarProps {
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "tracker", label: "Daily Tracker", icon: Receipt },
+  { id: "budget", label: "Budget", icon: Target },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
   { id: "expenses", label: "Expenses", icon: Wallet },
   { id: "investments", label: "Investments", icon: TrendingUp },
