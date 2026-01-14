@@ -12,7 +12,8 @@ import {
   CalendarDays,
   Receipt,
   Target,
-  History
+  History,
+  BarChart3
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const navItems = [
   { id: "tracker", label: "Daily Tracker", icon: Receipt },
   { id: "budget", label: "Budget", icon: Target },
   { id: "history", label: "History", icon: History },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
   { id: "expenses", label: "Expenses", icon: Wallet },
   { id: "investments", label: "Investments", icon: TrendingUp },
