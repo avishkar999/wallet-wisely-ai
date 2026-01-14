@@ -16,6 +16,7 @@ import { SettingsPage } from "@/pages/Settings";
 import { CalendarPage } from "@/pages/Calendar";
 import { DailySpendingTracker } from "@/components/tracker/DailySpendingTracker";
 import { BudgetManager } from "@/components/budget/BudgetManager";
+import { TransactionsHistory } from "@/components/transactions/TransactionsHistory";
 import { Bell, Search, Calendar, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +40,8 @@ const Index = () => {
         return <DailySpendingTracker />;
       case "budget":
         return <BudgetManager />;
+      case "history":
+        return <TransactionsHistory />;
       case "calendar":
         return <CalendarPage />;
       case "expenses":
