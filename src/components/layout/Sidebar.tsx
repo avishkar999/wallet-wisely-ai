@@ -13,7 +13,8 @@ import {
   Receipt,
   Target,
   History,
-  BarChart3
+  BarChart3,
+  Goal
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "tracker", label: "Daily Tracker", icon: Receipt },
   { id: "budget", label: "Budget", icon: Target },
+  { id: "goals", label: "Goals", icon: Goal },
   { id: "history", label: "History", icon: History },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
