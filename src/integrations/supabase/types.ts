@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      budget_alert_settings: {
+        Row: {
+          alert_email: string | null
+          alert_threshold: number | null
+          created_at: string
+          email_alerts_enabled: boolean | null
+          id: string
+          last_alert_sent_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_email?: string | null
+          alert_threshold?: number | null
+          created_at?: string
+          email_alerts_enabled?: boolean | null
+          id?: string
+          last_alert_sent_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_email?: string | null
+          alert_threshold?: number | null
+          created_at?: string
+          email_alerts_enabled?: boolean | null
+          id?: string
+          last_alert_sent_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       budgets: {
         Row: {
           budgeted_amount: number
@@ -285,6 +318,48 @@ export type Database = {
           reminder_days_before?: number | null
           title?: string
           type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      savings_goals: {
+        Row: {
+          category: string | null
+          created_at: string
+          current_amount: number
+          id: string
+          is_completed: boolean | null
+          name: string
+          notes: string | null
+          target_amount: number
+          target_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          current_amount?: number
+          id?: string
+          is_completed?: boolean | null
+          name: string
+          notes?: string | null
+          target_amount?: number
+          target_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          current_amount?: number
+          id?: string
+          is_completed?: boolean | null
+          name?: string
+          notes?: string | null
+          target_amount?: number
+          target_date?: string | null
           updated_at?: string
           user_id?: string
         }
