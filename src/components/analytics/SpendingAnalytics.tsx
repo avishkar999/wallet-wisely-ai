@@ -2,10 +2,11 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTransactions } from "@/hooks/useTransactions";
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, eachMonthOfInterval } from "date-fns";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, BarChart3, PieChart, LineChart, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, TrendingDown, BarChart3, PieChart, LineChart, ArrowUpRight, ArrowDownRight, Target, Lightbulb } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -23,6 +24,8 @@ import {
   ComposedChart,
   Line,
 } from "recharts";
+import { SpendingForecast } from "./SpendingForecast";
+import { BudgetVsActualChart } from "./BudgetVsActualChart";
 
 const categoryLabels: Record<string, string> = {
   food: "Food & Dining",
@@ -190,12 +193,32 @@ export function SpendingAnalytics() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Controls */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">Spending Analytics</h2>
-          <p className="text-muted-foreground">Track your financial trends over time</p>
-        </div>
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">Spending Analytics</h2>
+        <p className="text-muted-foreground">Track your financial trends over time</p>
+      </div>
+
+      {/* Tabs for different views */}
+      <Tabs defaultValue="trends" className="space-y-6">
+        <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsTrigger value="trends" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Trends
+          </TabsTrigger>
+          <TabsTrigger value="forecast" className="flex items-center gap-2">
+            <Lightbulb className="w-4 h-4" />
+            Forecast
+          </TabsTrigger>
+          <TabsTrigger value="budget" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            Budget
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="trends" className="space-y-6">
+          {/* Controls */}
+          <div className="flex items-center gap-3">
         <div className="flex items-center gap-3">
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-[140px]">
@@ -502,6 +525,16 @@ export function SpendingAnalytics() {
           </CardContent>
         </Card>
       </motion.div>
+        </TabsContent>
+
+        <TabsContent value="forecast">
+          <SpendingForecast />
+        </TabsContent>
+
+        <TabsContent value="budget">
+          <BudgetVsActualChart />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
