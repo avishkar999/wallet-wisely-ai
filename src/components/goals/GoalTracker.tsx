@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion } from "framer-motion";
 import { 
   Target, 
@@ -13,7 +14,9 @@ import {
   Edit2,
   CheckCircle2,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  PiggyBank,
+  Bell
 } from "lucide-react";
 import { useEmergencyFundSummary, useCreateOrUpdateEmergencyFund } from "@/hooks/useEmergencyFund";
 import { useDebtSummary } from "@/hooks/useDebts";
@@ -29,6 +32,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { SavingsGoals } from "./SavingsGoals";
+import { BudgetAlertSettings } from "./BudgetAlertSettings";
 
 export function GoalTracker() {
   const { fund, progress: emergencyProgress, remaining: emergencyRemaining, monthlyContributionNeeded, isLoading: emergencyLoading } = useEmergencyFundSummary();
@@ -140,8 +145,30 @@ export function GoalTracker() {
         </div>
       </div>
 
-      {/* Main Goals Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Tabs for different goal types */}
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full max-w-lg grid-cols-4">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            <span className="hidden sm:inline">Overview</span>
+          </TabsTrigger>
+          <TabsTrigger value="savings" className="flex items-center gap-2">
+            <PiggyBank className="w-4 h-4" />
+            <span className="hidden sm:inline">Savings</span>
+          </TabsTrigger>
+          <TabsTrigger value="debts" className="flex items-center gap-2">
+            <CreditCard className="w-4 h-4" />
+            <span className="hidden sm:inline">Debts</span>
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            <span className="hidden sm:inline">Alerts</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* Main Goals Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Emergency Fund Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -391,6 +418,84 @@ export function GoalTracker() {
           </CardContent>
         </Card>
       </motion.div>
+        </TabsContent>
+
+        <TabsContent value="savings">
+          <SavingsGoals />
+        </TabsContent>
+
+        <TabsContent value="debts" className="space-y-6">
+          {/* Debt Payoff Milestones - moved from overview */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="glass">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-accent" />
+                    </div>
+                    Debt Payoff Progress
+                  </CardTitle>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Estimated Debt-Free Date</p>
+                    <p className="text-sm font-semibold text-foreground">{format(debtFreeDate, "MMM yyyy")}</p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {debtMilestones.length > 0 ? (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-xl bg-secondary/50 mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-foreground">Total Debt</span>
+                        <span className="text-sm font-semibold text-foreground">{formatCurrency(totalDebt)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Monthly Payment: {formatCurrency(totalMonthlyPayment)}</span>
+                        <span>{debts.length} active debts</span>
+                      </div>
+                    </div>
+                    <div className="grid gap-4">
+                      {debtMilestones.map((debt, index) => (
+                        <div key={debt.id} className="p-4 rounded-xl bg-card border border-border">
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <p className="font-medium text-foreground">{debt.name}</p>
+                              <p className="text-xs text-muted-foreground capitalize">{debt.type.replace("_", " ")}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-semibold text-foreground">{formatCurrency(Number(debt.outstanding_amount))}</p>
+                              <p className="text-xs text-muted-foreground">{debt.interest_rate}% APR</p>
+                            </div>
+                          </div>
+                          <Progress value={debt.progress} className="h-2 bg-muted" />
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mt-2">
+                            <span>Paid: {formatCurrency(debt.paidOff)} ({debt.progress}%)</span>
+                            <span>~{debt.monthsRemaining} months left</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-3" />
+                    <p className="text-lg font-medium text-foreground">Debt Free!</p>
+                    <p className="text-sm text-muted-foreground">You have no active debts</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        </TabsContent>
+
+        <TabsContent value="alerts">
+          <BudgetAlertSettings />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
