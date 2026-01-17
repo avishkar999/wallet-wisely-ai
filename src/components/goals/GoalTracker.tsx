@@ -18,7 +18,9 @@ import {
   PiggyBank,
   Bell,
   Lightbulb,
-  FileText
+  FileText,
+  RefreshCcw,
+  Mail
 } from "lucide-react";
 import { useEmergencyFundSummary, useCreateOrUpdateEmergencyFund } from "@/hooks/useEmergencyFund";
 import { useDebtSummary } from "@/hooks/useDebts";
@@ -38,6 +40,8 @@ import { SavingsGoals } from "./SavingsGoals";
 import { BudgetAlertSettings } from "./BudgetAlertSettings";
 import { FinancialRecommendations } from "./FinancialRecommendations";
 import { SummaryReport } from "./SummaryReport";
+import { SubscriptionTracker } from "@/components/subscriptions/SubscriptionTracker";
+import { MonthlyDigestSettings } from "@/components/subscriptions/MonthlyDigestSettings";
 
 export function GoalTracker() {
   const { fund, progress: emergencyProgress, remaining: emergencyRemaining, monthlyContributionNeeded, isLoading: emergencyLoading } = useEmergencyFundSummary();
@@ -151,7 +155,7 @@ export function GoalTracker() {
 
       {/* Tabs for different goal types */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full max-w-2xl grid-cols-6">
+        <TabsList className="flex flex-wrap w-full max-w-4xl gap-1">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Target className="w-4 h-4" />
             <span className="hidden sm:inline">Overview</span>
@@ -164,6 +168,10 @@ export function GoalTracker() {
             <CreditCard className="w-4 h-4" />
             <span className="hidden sm:inline">Debts</span>
           </TabsTrigger>
+          <TabsTrigger value="subscriptions" className="flex items-center gap-2">
+            <RefreshCcw className="w-4 h-4" />
+            <span className="hidden sm:inline">Subscriptions</span>
+          </TabsTrigger>
           <TabsTrigger value="recommendations" className="flex items-center gap-2">
             <Lightbulb className="w-4 h-4" />
             <span className="hidden sm:inline">Tips</span>
@@ -175,6 +183,10 @@ export function GoalTracker() {
           <TabsTrigger value="alerts" className="flex items-center gap-2">
             <Bell className="w-4 h-4" />
             <span className="hidden sm:inline">Alerts</span>
+          </TabsTrigger>
+          <TabsTrigger value="digest" className="flex items-center gap-2">
+            <Mail className="w-4 h-4" />
+            <span className="hidden sm:inline">Digest</span>
           </TabsTrigger>
         </TabsList>
 
@@ -504,6 +516,10 @@ export function GoalTracker() {
           </motion.div>
         </TabsContent>
 
+        <TabsContent value="subscriptions">
+          <SubscriptionTracker />
+        </TabsContent>
+
         <TabsContent value="recommendations">
           <FinancialRecommendations />
         </TabsContent>
@@ -514,6 +530,10 @@ export function GoalTracker() {
 
         <TabsContent value="alerts">
           <BudgetAlertSettings />
+        </TabsContent>
+
+        <TabsContent value="digest">
+          <MonthlyDigestSettings />
         </TabsContent>
       </Tabs>
     </div>
