@@ -370,8 +370,11 @@ export type Database = {
           cancelled_at: string | null
           created_at: string
           id: string
+          marked_for_review_at: string | null
           monthly_amount: number
           notes: string | null
+          reminder_days: number | null
+          reminder_sent_at: string | null
           status: string
           subscription_name: string
           updated_at: string
@@ -381,8 +384,11 @@ export type Database = {
           cancelled_at?: string | null
           created_at?: string
           id?: string
+          marked_for_review_at?: string | null
           monthly_amount?: number
           notes?: string | null
+          reminder_days?: number | null
+          reminder_sent_at?: string | null
           status?: string
           subscription_name: string
           updated_at?: string
@@ -392,8 +398,11 @@ export type Database = {
           cancelled_at?: string | null
           created_at?: string
           id?: string
+          marked_for_review_at?: string | null
           monthly_amount?: number
           notes?: string | null
+          reminder_days?: number | null
+          reminder_sent_at?: string | null
           status?: string
           subscription_name?: string
           updated_at?: string

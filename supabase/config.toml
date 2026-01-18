@@ -1,1 +1,10 @@
 project_id = "xgwgnxjondblftyamkgu"
+
+[functions.send-budget-alert]
+verify_jwt = false
+
+[functions.send-monthly-digest]
+verify_jwt = false
+
+[functions.send-subscription-reminder]
+verify_jwt = false

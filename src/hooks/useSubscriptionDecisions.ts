@@ -15,6 +15,9 @@ export interface SubscriptionDecision {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  marked_for_review_at: string | null;
+  reminder_days: number | null;
+  reminder_sent_at: string | null;
 }
 
 export function useSubscriptionDecisions() {
@@ -43,11 +46,13 @@ export function useSubscriptionDecisions() {
       status,
       monthlyAmount,
       notes,
+      reminderDays,
     }: {
       subscriptionName: string;
       status: SubscriptionStatus;
       monthlyAmount: number;
       notes?: string;
+      reminderDays?: number;
     }) => {
       if (!user?.id) throw new Error("Not authenticated");
 
@@ -58,6 +63,7 @@ export function useSubscriptionDecisions() {
         monthly_amount: monthlyAmount,
         notes: notes || null,
         cancelled_at: status === "cancelled" ? new Date().toISOString() : null,
+        reminder_days: reminderDays ?? 7,
       };
 
       const { data, error } = await supabase

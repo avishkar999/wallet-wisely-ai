@@ -81,7 +81,8 @@ export function SubscriptionTracker() {
 
   const handleUpdateDecision = (
     sub: DetectedSubscription,
-    status: SubscriptionStatus
+    status: SubscriptionStatus,
+    reminderDays?: number
   ) => {
     // Calculate monthly amount based on frequency
     let monthlyAmount = sub.averageAmount;
@@ -102,6 +103,7 @@ export function SubscriptionTracker() {
       status,
       monthlyAmount,
       notes: decisionNotes || undefined,
+      reminderDays: status === "to_review" ? (reminderDays ?? 7) : undefined,
     });
     setDecisionNotes("");
   };
@@ -351,7 +353,7 @@ export function SubscriptionTracker() {
                     onViewDetails={() => setSelectedSubscription(sub)}
                     formatCurrency={formatCurrency}
                     decision={getDecisionForSubscription(sub.name)}
-                    onUpdateDecision={(status) => handleUpdateDecision(sub, status)}
+                    onUpdateDecision={(status, reminderDays) => handleUpdateDecision(sub, status, reminderDays)}
                   />
                 ))
               )}
@@ -384,7 +386,7 @@ export function SubscriptionTracker() {
                     onViewDetails={() => setSelectedSubscription(sub)}
                     formatCurrency={formatCurrency}
                     decision={getDecisionForSubscription(sub.name)}
-                    onUpdateDecision={(status) => handleUpdateDecision(sub, status)}
+                    onUpdateDecision={(status, reminderDays) => handleUpdateDecision(sub, status, reminderDays)}
                   />
                 ))
               )}
@@ -491,8 +493,10 @@ interface SubscriptionCardProps {
   decision?: {
     status: SubscriptionStatus;
     cancelled_at: string | null;
+    marked_for_review_at: string | null;
+    reminder_days: number | null;
   };
-  onUpdateDecision: (status: SubscriptionStatus) => void;
+  onUpdateDecision: (status: SubscriptionStatus, reminderDays?: number) => void;
 }
 
 function SubscriptionCard({
@@ -505,11 +509,19 @@ function SubscriptionCard({
   decision,
   onUpdateDecision,
 }: SubscriptionCardProps) {
+  const [selectedReminderDays, setSelectedReminderDays] = useState<string>("7");
+  const [showReminderSelect, setShowReminderSelect] = useState(false);
+  
   const daysUntilNext = differenceInDays(
     parseISO(subscription.nextExpectedDate),
     new Date()
   );
   const isUpcoming = daysUntilNext <= 7 && daysUntilNext >= 0;
+  
+  // Calculate days since marked for review
+  const daysSinceMarked = decision?.marked_for_review_at 
+    ? differenceInDays(new Date(), parseISO(decision.marked_for_review_at))
+    : null;
 
   const getStatusBadge = () => {
     if (!decision) return null;
@@ -525,7 +537,7 @@ function SubscriptionCard({
         return (
           <Badge className="bg-warning/20 text-warning border-warning/30">
             <Clock className="w-3 h-3 mr-1" />
-            To Review
+            To Review {daysSinceMarked !== null && `(${daysSinceMarked}d)`}
           </Badge>
         );
       case "cancelled":
@@ -643,7 +655,7 @@ function SubscriptionCard({
                     <p className="text-xs text-muted-foreground mb-2">
                       Mark this subscription:
                     </p>
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 items-center">
                       <Button
                         variant={decision?.status === "keep" ? "default" : "outline"}
                         size="sm"
@@ -656,18 +668,60 @@ function SubscriptionCard({
                         <Bookmark className="w-4 h-4 mr-1" />
                         Keep
                       </Button>
-                      <Button
-                        variant={decision?.status === "to_review" ? "default" : "outline"}
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onUpdateDecision("to_review");
-                        }}
-                        className={decision?.status === "to_review" ? "bg-warning hover:bg-warning/90 text-warning-foreground" : ""}
-                      >
-                        <Clock className="w-4 h-4 mr-1" />
-                        To Review
-                      </Button>
+                      
+                      {showReminderSelect ? (
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Select
+                            value={selectedReminderDays}
+                            onValueChange={setSelectedReminderDays}
+                          >
+                            <SelectTrigger className="w-28 h-8">
+                              <SelectValue placeholder="Remind in" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="3">3 days</SelectItem>
+                              <SelectItem value="7">7 days</SelectItem>
+                              <SelectItem value="14">14 days</SelectItem>
+                              <SelectItem value="30">30 days</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            size="sm"
+                            className="bg-warning hover:bg-warning/90 text-warning-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onUpdateDecision("to_review", parseInt(selectedReminderDays));
+                              setShowReminderSelect(false);
+                            }}
+                          >
+                            Confirm
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowReminderSelect(false);
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant={decision?.status === "to_review" ? "default" : "outline"}
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowReminderSelect(true);
+                          }}
+                          className={decision?.status === "to_review" ? "bg-warning hover:bg-warning/90 text-warning-foreground" : ""}
+                        >
+                          <Clock className="w-4 h-4 mr-1" />
+                          To Review
+                        </Button>
+                      )}
+                      
                       <Button
                         variant={decision?.status === "cancelled" ? "default" : "outline"}
                         size="sm"
@@ -681,6 +735,20 @@ function SubscriptionCard({
                         Cancelled
                       </Button>
                     </div>
+                    
+                    {/* Show reminder info for to_review status */}
+                    {decision?.status === "to_review" && decision.marked_for_review_at && (
+                      <div className="mt-3 p-2 rounded-lg bg-warning/10 border border-warning/20">
+                        <p className="text-xs text-warning">
+                          <Clock className="w-3 h-3 inline mr-1" />
+                          Reminder set for {decision.reminder_days || 7} days after marking. 
+                          {daysSinceMarked !== null && daysSinceMarked >= (decision.reminder_days || 7)
+                            ? " Reminder email sent!"
+                            : ` (${(decision.reminder_days || 7) - (daysSinceMarked || 0)} days left)`
+                          }
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex justify-end gap-2">
