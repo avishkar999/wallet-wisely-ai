@@ -365,6 +365,42 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_decisions: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          id: string
+          monthly_amount: number
+          notes: string | null
+          status: string
+          subscription_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          monthly_amount?: number
+          notes?: string | null
+          status?: string
+          subscription_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          id?: string
+          monthly_amount?: number
+          notes?: string | null
+          status?: string
+          subscription_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
