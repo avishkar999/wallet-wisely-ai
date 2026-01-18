@@ -10,19 +10,24 @@ import {
   CreditCard,
   AlertTriangle,
   CheckCircle2,
-  Calendar,
   TrendingUp,
-  Trash2,
   Eye,
   ChevronDown,
   ChevronUp,
   Search,
-  Filter,
+  Bookmark,
+  XCircle,
+  PiggyBank,
+  Clock,
 } from "lucide-react";
 import {
   useSubscriptionDetection,
   DetectedSubscription,
 } from "@/hooks/useSubscriptionDetection";
+import {
+  useSubscriptionDecisions,
+  SubscriptionStatus,
+} from "@/hooks/useSubscriptionDecisions";
 import { format, parseISO, differenceInDays } from "date-fns";
 import {
   Dialog,
@@ -38,6 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 const categoryColors: Record<string, string> = {
   entertainment: "bg-purple-500/20 text-purple-400",
@@ -59,12 +65,46 @@ const frequencyLabels: Record<string, string> = {
 
 export function SubscriptionTracker() {
   const { subscriptions, summary, isLoading } = useSubscriptionDetection();
+  const {
+    decisions,
+    updateDecision,
+    cancelledSavings,
+    getDecisionForSubscription,
+  } = useSubscriptionDecisions();
   const [selectedSubscription, setSelectedSubscription] =
     useState<DetectedSubscription | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [decisionNotes, setDecisionNotes] = useState<string>("");
+
+  const handleUpdateDecision = (
+    sub: DetectedSubscription,
+    status: SubscriptionStatus
+  ) => {
+    // Calculate monthly amount based on frequency
+    let monthlyAmount = sub.averageAmount;
+    switch (sub.frequency) {
+      case "weekly":
+        monthlyAmount = sub.averageAmount * 4.33;
+        break;
+      case "quarterly":
+        monthlyAmount = sub.averageAmount / 3;
+        break;
+      case "yearly":
+        monthlyAmount = sub.averageAmount / 12;
+        break;
+    }
+
+    updateDecision.mutate({
+      subscriptionName: sub.name,
+      status,
+      monthlyAmount,
+      notes: decisionNotes || undefined,
+    });
+    setDecisionNotes("");
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -102,7 +142,7 @@ export function SubscriptionTracker() {
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -198,6 +238,33 @@ export function SubscriptionTracker() {
             </CardContent>
           </Card>
         </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card className="glass-hover border-success/30">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    Cancellation Savings
+                  </p>
+                  <p className="text-2xl font-bold text-success">
+                    {formatCurrency(cancelledSavings)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    per month saved
+                  </p>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-success/20 flex items-center justify-center">
+                  <PiggyBank className="w-6 h-6 text-success" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
       {/* Filters */}
@@ -283,6 +350,8 @@ export function SubscriptionTracker() {
                     }
                     onViewDetails={() => setSelectedSubscription(sub)}
                     formatCurrency={formatCurrency}
+                    decision={getDecisionForSubscription(sub.name)}
+                    onUpdateDecision={(status) => handleUpdateDecision(sub, status)}
                   />
                 ))
               )}
@@ -314,6 +383,8 @@ export function SubscriptionTracker() {
                     }
                     onViewDetails={() => setSelectedSubscription(sub)}
                     formatCurrency={formatCurrency}
+                    decision={getDecisionForSubscription(sub.name)}
+                    onUpdateDecision={(status) => handleUpdateDecision(sub, status)}
                   />
                 ))
               )}
@@ -417,6 +488,11 @@ interface SubscriptionCardProps {
   onToggleExpand: () => void;
   onViewDetails: () => void;
   formatCurrency: (amount: number) => string;
+  decision?: {
+    status: SubscriptionStatus;
+    cancelled_at: string | null;
+  };
+  onUpdateDecision: (status: SubscriptionStatus) => void;
 }
 
 function SubscriptionCard({
@@ -426,12 +502,43 @@ function SubscriptionCard({
   onToggleExpand,
   onViewDetails,
   formatCurrency,
+  decision,
+  onUpdateDecision,
 }: SubscriptionCardProps) {
   const daysUntilNext = differenceInDays(
     parseISO(subscription.nextExpectedDate),
     new Date()
   );
   const isUpcoming = daysUntilNext <= 7 && daysUntilNext >= 0;
+
+  const getStatusBadge = () => {
+    if (!decision) return null;
+    switch (decision.status) {
+      case "keep":
+        return (
+          <Badge className="bg-success/20 text-success border-success/30">
+            <Bookmark className="w-3 h-3 mr-1" />
+            Keep
+          </Badge>
+        );
+      case "to_review":
+        return (
+          <Badge className="bg-warning/20 text-warning border-warning/30">
+            <Clock className="w-3 h-3 mr-1" />
+            To Review
+          </Badge>
+        );
+      case "cancelled":
+        return (
+          <Badge className="bg-destructive/20 text-destructive border-destructive/30">
+            <XCircle className="w-3 h-3 mr-1" />
+            Cancelled
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <motion.div
@@ -443,7 +550,7 @@ function SubscriptionCard({
       <Card
         className={`glass-hover cursor-pointer ${
           isUpcoming ? "border-warning/30" : ""
-        }`}
+        } ${decision?.status === "cancelled" ? "opacity-60" : ""}`}
       >
         <CardContent className="pt-4">
           <div
@@ -459,7 +566,10 @@ function SubscriptionCard({
                 <RefreshCcw className="w-5 h-5" />
               </div>
               <div>
-                <p className="font-medium text-foreground">{subscription.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-foreground">{subscription.name}</p>
+                  {getStatusBadge()}
+                </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <span className="capitalize">{subscription.category}</span>
                   <span>•</span>
@@ -527,6 +637,52 @@ function SubscriptionCard({
                       </p>
                     </div>
                   </div>
+
+                  {/* Decision Actions */}
+                  <div className="mb-4">
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Mark this subscription:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        variant={decision?.status === "keep" ? "default" : "outline"}
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onUpdateDecision("keep");
+                        }}
+                        className={decision?.status === "keep" ? "bg-success hover:bg-success/90" : ""}
+                      >
+                        <Bookmark className="w-4 h-4 mr-1" />
+                        Keep
+                      </Button>
+                      <Button
+                        variant={decision?.status === "to_review" ? "default" : "outline"}
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onUpdateDecision("to_review");
+                        }}
+                        className={decision?.status === "to_review" ? "bg-warning hover:bg-warning/90 text-warning-foreground" : ""}
+                      >
+                        <Clock className="w-4 h-4 mr-1" />
+                        To Review
+                      </Button>
+                      <Button
+                        variant={decision?.status === "cancelled" ? "default" : "outline"}
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onUpdateDecision("cancelled");
+                        }}
+                        className={decision?.status === "cancelled" ? "bg-destructive hover:bg-destructive/90" : ""}
+                      >
+                        <XCircle className="w-4 h-4 mr-1" />
+                        Cancelled
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="outline"

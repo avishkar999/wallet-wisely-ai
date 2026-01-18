@@ -106,6 +106,22 @@ const handler = async (req: Request): Promise<Response> => {
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
 
+    // Fetch subscription decisions for cancellation savings
+    let decisionsQuery = supabase
+      .from("subscription_decisions")
+      .select("*")
+      .eq("status", "cancelled");
+
+    if (userId) {
+      decisionsQuery = decisionsQuery.eq("user_id", userId);
+    }
+
+    const { data: cancelledSubs } = await decisionsQuery;
+    const cancellationSavings = cancelledSubs?.reduce(
+      (sum, d) => sum + Number(d.monthly_amount),
+      0
+    ) || 0;
+
     // Format currency
     const formatCurrency = (amount: number) =>
       new Intl.NumberFormat("en-IN", {
@@ -189,6 +205,15 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             ` : ''}
 
+            <!-- Cancellation Savings -->
+            ${cancellationSavings > 0 ? `
+            <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin-bottom: 32px; text-align: center;">
+              <h3 style="color: #166534; margin: 0 0 8px; font-size: 16px;">🎉 Subscription Savings</h3>
+              <p style="color: #15803d; margin: 0; font-size: 28px; font-weight: bold;">${formatCurrency(cancellationSavings)}/mo</p>
+              <p style="color: #166534; margin: 8px 0 0; font-size: 14px;">saved from cancelled subscriptions</p>
+            </div>
+            ` : ''}
+
             <!-- Tips -->
             <div style="background-color: #fefce8; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
               <h3 style="color: #854d0e; margin: 0 0 12px; font-size: 16px;">💡 Quick Tips</h3>
@@ -237,6 +262,7 @@ const handler = async (req: Request): Promise<Response> => {
           savingsRate,
           topCategories: sortedCategories.length,
           recurringExpenses: potentialSubscriptions.length,
+          cancellationSavings,
         },
       }),
       {
