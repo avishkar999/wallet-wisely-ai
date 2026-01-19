@@ -50,6 +50,19 @@ const handler = async (req: Request): Promise<Response> => {
     const remindersToSend: SubscriptionToReview[] = [];
 
     for (const sub of subscriptions || []) {
+      // Check user's notification preferences
+      const { data: preferences } = await supabase
+        .from("notification_preferences")
+        .select("subscription_reminders_enabled, reminder_email")
+        .eq("user_id", sub.user_id)
+        .maybeSingle();
+
+      // Skip if reminders are disabled
+      if (preferences?.subscription_reminders_enabled === false) {
+        console.log(`Skipping user ${sub.user_id} - reminders disabled`);
+        continue;
+      }
+
       const markedAt = new Date(sub.marked_for_review_at);
       const reminderDays = sub.reminder_days || 7;
       const reminderDate = new Date(markedAt.getTime() + reminderDays * 24 * 60 * 60 * 1000);
@@ -60,17 +73,22 @@ const handler = async (req: Request): Promise<Response> => {
         const reminderCooldown = 7 * 24 * 60 * 60 * 1000; // 7 days cooldown between reminders
         
         if (!lastReminder || (now.getTime() - lastReminder.getTime()) >= reminderCooldown) {
-          // Get user email
-          const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(sub.user_id);
+          // Get user email - prefer custom email from preferences
+          let userEmail = preferences?.reminder_email;
           
-          if (authError || !authUser?.user?.email) {
-            console.error(`Could not get email for user ${sub.user_id}:`, authError);
-            continue;
+          if (!userEmail) {
+            const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(sub.user_id);
+            
+            if (authError || !authUser?.user?.email) {
+              console.error(`Could not get email for user ${sub.user_id}:`, authError);
+              continue;
+            }
+            userEmail = authUser.user.email;
           }
 
           remindersToSend.push({
             ...sub,
-            user_email: authUser.user.email,
+            user_email: userEmail,
           });
         }
       }
