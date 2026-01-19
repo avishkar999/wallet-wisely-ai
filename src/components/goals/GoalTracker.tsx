@@ -42,6 +42,7 @@ import { FinancialRecommendations } from "./FinancialRecommendations";
 import { SummaryReport } from "./SummaryReport";
 import { SubscriptionTracker } from "@/components/subscriptions/SubscriptionTracker";
 import { MonthlyDigestSettings } from "@/components/subscriptions/MonthlyDigestSettings";
+import { NotificationPreferences } from "@/components/subscriptions/NotificationPreferences";
 
 export function GoalTracker() {
   const { fund, progress: emergencyProgress, remaining: emergencyRemaining, monthlyContributionNeeded, isLoading: emergencyLoading } = useEmergencyFundSummary();
@@ -187,6 +188,10 @@ export function GoalTracker() {
           <TabsTrigger value="digest" className="flex items-center gap-2">
             <Mail className="w-4 h-4" />
             <span className="hidden sm:inline">Digest</span>
+          </TabsTrigger>
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="w-4 h-4" />
+            <span className="hidden sm:inline">Notifications</span>
           </TabsTrigger>
         </TabsList>
 
@@ -534,6 +539,10 @@ export function GoalTracker() {
 
         <TabsContent value="digest">
           <MonthlyDigestSettings />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <NotificationPreferences />
         </TabsContent>
       </Tabs>
     </div>
