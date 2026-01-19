@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { HealthScoreCard } from "@/components/dashboard/HealthScoreCard";
-import { CashFlowCard } from "@/components/dashboard/CashFlowCard";
-import { SpendingCategoriesCard } from "@/components/dashboard/SpendingCategoriesCard";
-import { PortfolioCard } from "@/components/dashboard/PortfolioCard";
-import { RecentTransactionsCard } from "@/components/dashboard/RecentTransactionsCard";
-import { QuickActionsCard } from "@/components/dashboard/QuickActionsCard";
-import { AIInsightCard } from "@/components/dashboard/AIInsightCard";
+import { HeroHealthScore } from "@/components/dashboard/HeroHealthScore";
+import { HabitStreak } from "@/components/dashboard/HabitStreak";
+import { SmartInsights } from "@/components/dashboard/SmartInsights";
+import { InvestmentGrowth } from "@/components/dashboard/InvestmentGrowth";
+import { QuickActionsCompact } from "@/components/dashboard/QuickActionsCompact";
+import { RecentActivity } from "@/components/dashboard/RecentActivity";
+import { SpendingBreakdown } from "@/components/dashboard/SpendingBreakdown";
 import { ExpenseTracker } from "@/components/dashboard/ExpenseTracker";
 import { InvestmentScanner } from "@/components/investments/InvestmentScanner";
 import { DebtAnalyzer } from "@/components/debts/DebtAnalyzer";
@@ -19,10 +19,10 @@ import { BudgetManager } from "@/components/budget/BudgetManager";
 import { TransactionsHistory } from "@/components/transactions/TransactionsHistory";
 import { SpendingAnalytics } from "@/components/analytics/SpendingAnalytics";
 import { GoalTracker } from "@/components/goals/GoalTracker";
-import { Bell, Search, Calendar, Menu } from "lucide-react";
+import { Bell, Search, Menu, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Index = () => {
@@ -67,7 +67,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile Sidebar */}
       {isMobile ? (
         <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
           <SheetContent side="left" className="p-0 w-[280px]">
@@ -92,8 +91,7 @@ const Index = () => {
         className="transition-all duration-300"
         style={{ marginLeft: isMobile ? 0 : (sidebarCollapsed ? 80 : 280) }}
       >
-        {/* Top Bar */}
-        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
+        <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-xl">
           <div className="flex items-center justify-between px-4 sm:px-6 py-4">
             <div className="flex items-center gap-3">
               {isMobile && (
@@ -106,14 +104,14 @@ const Index = () => {
                   key={activeTab}
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-lg sm:text-xl font-semibold text-foreground capitalize"
+                  className="text-lg sm:text-xl font-semibold text-foreground capitalize flex items-center gap-2"
                 >
+                  {activeTab === "dashboard" && <Sparkles className="w-5 h-5 text-primary" />}
                   {activeTab === "advisor" ? "AI Financial Advisor" : activeTab}
                 </motion.h1>
-                <p className="text-xs sm:text-sm text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {new Date().toLocaleDateString('en-IN', { 
                     weekday: isMobile ? 'short' : 'long', 
-                    year: 'numeric', 
                     month: isMobile ? 'short' : 'long', 
                     day: 'numeric' 
                   })}
@@ -126,22 +124,17 @@ const Index = () => {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
                   placeholder="Search..." 
-                  className="pl-9 w-64 bg-secondary border-0 focus-visible:ring-1 focus-visible:ring-primary"
+                  className="pl-9 w-64 bg-secondary/50 border-border/50 focus-visible:ring-1 focus-visible:ring-primary"
                 />
               </div>
               <Button variant="ghost" size="icon" className="relative">
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-              </Button>
-              <Button variant="outline" size="sm" className="hidden sm:flex">
-                <Calendar className="w-4 h-4 mr-2" />
-                {new Date().toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
               </Button>
             </div>
           </div>
         </header>
 
-        {/* Content */}
         <div className="p-4 sm:p-6">
           {renderContent()}
         </div>
@@ -151,56 +144,33 @@ const Index = () => {
 };
 
 const Dashboard = () => {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
-
   return (
     <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-6"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-5 max-w-6xl mx-auto"
     >
-      {/* Top Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div variants={itemVariants}>
-          <HealthScoreCard />
-        </motion.div>
-        <motion.div variants={itemVariants}>
-          <CashFlowCard />
-        </motion.div>
-      </div>
+      {/* Hero Health Score */}
+      <HeroHealthScore />
 
-      {/* Middle Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <motion.div variants={itemVariants}>
-          <SpendingCategoriesCard />
-        </motion.div>
-        <motion.div variants={itemVariants}>
-          <PortfolioCard />
-        </motion.div>
-        <motion.div variants={itemVariants} className="space-y-6">
-          <QuickActionsCard />
-          <AIInsightCard />
-        </motion.div>
-      </div>
+      {/* Main Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Left Column */}
+        <div className="lg:col-span-2 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <QuickActionsCompact />
+            <HabitStreak />
+          </div>
+          <RecentActivity />
+        </div>
 
-      {/* Bottom Row */}
-      <motion.div variants={itemVariants}>
-        <RecentTransactionsCard />
-      </motion.div>
+        {/* Right Column */}
+        <div className="space-y-5">
+          <InvestmentGrowth />
+          <SpendingBreakdown />
+          <SmartInsights />
+        </div>
+      </div>
     </motion.div>
   );
 };
