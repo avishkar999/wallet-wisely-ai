@@ -9,12 +9,17 @@ import {
   Plus,
   Sparkles,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  Edit
 } from "lucide-react";
 import { useInvestmentSummary, useInvestments } from "@/hooks/useInvestments";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AddInvestmentDialog } from "@/components/forms/AddInvestmentDialog";
+import { EditInvestmentDialog } from "@/components/forms/EditInvestmentDialog";
 import { useState } from "react";
+import { Tables } from "@/integrations/supabase/types";
+
+type Investment = Tables<"investments">;
 
 export function InvestmentScanner() {
   const { data: investments, isLoading } = useInvestments();
@@ -28,6 +33,7 @@ export function InvestmentScanner() {
     count: data.count
   }));
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedInvestment, setSelectedInvestment] = useState<Investment | null>(null);
 
   const formatCurrency = (amount: number) => {
     if (amount >= 100000) {
@@ -219,7 +225,8 @@ export function InvestmentScanner() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer"
+                  className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer group"
+                  onClick={() => setSelectedInvestment(fund)}
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
@@ -230,14 +237,27 @@ export function InvestmentScanner() {
                       {fund.units ? `${fund.units} units` : ''} {fund.nav ? `@ NAV ₹${fund.nav.toFixed(2)}` : ''}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">{formatCurrency(fund.current_value)}</p>
-                    <p className={`text-xs font-medium flex items-center justify-end gap-1 ${
-                      returnPct >= 0 ? 'text-success' : 'text-destructive'
-                    }`}>
-                      {returnPct >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                      {returnPct >= 0 ? '+' : ''}{returnPct.toFixed(1)}%
-                    </p>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-foreground">{formatCurrency(fund.current_value)}</p>
+                      <p className={`text-xs font-medium flex items-center justify-end gap-1 ${
+                        returnPct >= 0 ? 'text-success' : 'text-destructive'
+                      }`}>
+                        {returnPct >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                        {returnPct >= 0 ? '+' : ''}{returnPct.toFixed(1)}%
+                      </p>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedInvestment(fund);
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
                   </div>
                 </motion.div>
               );
@@ -269,7 +289,8 @@ export function InvestmentScanner() {
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: index * 0.05 }}
-                    className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer"
+                    className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer group"
+                    onClick={() => setSelectedInvestment(stock)}
                   >
                     <div>
                       <div className="flex items-center gap-2 mb-1">
@@ -278,11 +299,24 @@ export function InvestmentScanner() {
                       </div>
                       <p className="text-xs text-muted-foreground">{stock.units ? `${stock.units} shares` : ''}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-base font-bold text-foreground">{formatCurrency(stock.current_value)}</p>
-                      <p className={`text-xs font-medium ${returnPct >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        {returnPct >= 0 ? '+' : ''}{returnPct.toFixed(1)}%
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <p className="text-base font-bold text-foreground">{formatCurrency(stock.current_value)}</p>
+                        <p className={`text-xs font-medium ${returnPct >= 0 ? 'text-success' : 'text-destructive'}`}>
+                          {returnPct >= 0 ? '+' : ''}{returnPct.toFixed(1)}%
+                        </p>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedInvestment(stock);
+                        }}
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
                     </div>
                   </motion.div>
                 );
@@ -332,6 +366,11 @@ export function InvestmentScanner() {
       )}
 
       <AddInvestmentDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <EditInvestmentDialog
+        open={!!selectedInvestment}
+        onOpenChange={(open) => !open && setSelectedInvestment(null)}
+        investment={selectedInvestment}
+      />
     </div>
   );
 }

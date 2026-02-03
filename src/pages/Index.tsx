@@ -19,6 +19,7 @@ import { BudgetManager } from "@/components/budget/BudgetManager";
 import { TransactionsHistory } from "@/components/transactions/TransactionsHistory";
 import { SpendingAnalytics } from "@/components/analytics/SpendingAnalytics";
 import { GoalTracker } from "@/components/goals/GoalTracker";
+import { RentalManager } from "@/components/rentals/RentalManager";
 import { Bell, Search, Menu, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +53,8 @@ const Index = () => {
         return <CalendarPage />;
       case "expenses":
         return <ExpenseTracker />;
+      case "rentals":
+        return <RentalManager />;
       case "investments":
         return <InvestmentScanner />;
       case "debts":

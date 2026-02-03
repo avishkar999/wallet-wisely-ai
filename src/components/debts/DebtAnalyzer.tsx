@@ -12,17 +12,23 @@ import {
   ArrowRight,
   Snowflake,
   Flame,
-  Plus
+  Plus,
+  Edit
 } from "lucide-react";
 import { useDebts, useDebtSummary } from "@/hooks/useDebts";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AddDebtDialog } from "@/components/forms/AddDebtDialog";
+import { EditDebtDialog } from "@/components/forms/EditDebtDialog";
 import { useState } from "react";
+import { Tables } from "@/integrations/supabase/types";
+
+type Debt = Tables<"debts">;
 
 export function DebtAnalyzer() {
   const { data: debts, isLoading } = useDebts();
   const { totalDebt, totalMonthlyPayment: totalMonthly, avgInterestRate: avgInterest, sortedByInterest, sortedByAmount, debtFreeDate } = useDebtSummary();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
 
   const formatCurrency = (amount: number) => {
     if (amount >= 100000) {
@@ -188,7 +194,8 @@ export function DebtAnalyzer() {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
+                className="p-4 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer group"
+                onClick={() => setSelectedDebt(debt)}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-3">
@@ -205,9 +212,22 @@ export function DebtAnalyzer() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-foreground">{formatCurrency(debt.outstanding_amount)}</p>
-                    <p className="text-xs text-destructive">{debt.interest_rate}% APR</p>
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-foreground">{formatCurrency(debt.outstanding_amount)}</p>
+                      <p className="text-xs text-destructive">{debt.interest_rate}% APR</p>
+                    </div>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedDebt(debt);
+                      }}
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
 
@@ -339,6 +359,11 @@ export function DebtAnalyzer() {
       )}
 
       <AddDebtDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      <EditDebtDialog 
+        open={!!selectedDebt} 
+        onOpenChange={(open) => !open && setSelectedDebt(null)}
+        debt={selectedDebt}
+      />
     </div>
   );
 }

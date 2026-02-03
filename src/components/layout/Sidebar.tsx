@@ -14,7 +14,8 @@ import {
   Target,
   History,
   BarChart3,
-  Goal
+  Goal,
+  Building2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ const navItems = [
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
   { id: "expenses", label: "Expenses", icon: Wallet },
+  { id: "rentals", label: "Rentals", icon: Building2 },
   { id: "investments", label: "Investments", icon: TrendingUp },
   { id: "debts", label: "Debts", icon: CreditCard },
   { id: "advisor", label: "AI Advisor", icon: MessageSquare },
