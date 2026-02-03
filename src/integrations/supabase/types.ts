@@ -123,11 +123,15 @@ export type Database = {
           end_date: string | null
           id: string
           interest_rate: number
+          last_payment_date: string | null
           minimum_payment: number
           name: string
+          next_payment_date: string | null
           notes: string | null
           outstanding_amount: number
           principal_amount: number
+          reminder_days_before: number | null
+          reminder_enabled: boolean | null
           start_date: string | null
           type: Database["public"]["Enums"]["debt_type"]
           updated_at: string
@@ -139,11 +143,15 @@ export type Database = {
           end_date?: string | null
           id?: string
           interest_rate?: number
+          last_payment_date?: string | null
           minimum_payment?: number
           name: string
+          next_payment_date?: string | null
           notes?: string | null
           outstanding_amount?: number
           principal_amount?: number
+          reminder_days_before?: number | null
+          reminder_enabled?: boolean | null
           start_date?: string | null
           type: Database["public"]["Enums"]["debt_type"]
           updated_at?: string
@@ -155,11 +163,15 @@ export type Database = {
           end_date?: string | null
           id?: string
           interest_rate?: number
+          last_payment_date?: string | null
           minimum_payment?: number
           name?: string
+          next_payment_date?: string | null
           notes?: string | null
           outstanding_amount?: number
           principal_amount?: number
+          reminder_days_before?: number | null
+          reminder_enabled?: boolean | null
           start_date?: string | null
           type?: Database["public"]["Enums"]["debt_type"]
           updated_at?: string
@@ -207,6 +219,7 @@ export type Database = {
           nav: number | null
           notes: string | null
           purchase_date: string | null
+          risk_level: string | null
           type: Database["public"]["Enums"]["investment_type"]
           units: number | null
           updated_at: string
@@ -221,6 +234,7 @@ export type Database = {
           nav?: number | null
           notes?: string | null
           purchase_date?: string | null
+          risk_level?: string | null
           type: Database["public"]["Enums"]["investment_type"]
           units?: number | null
           updated_at?: string
@@ -235,6 +249,7 @@ export type Database = {
           nav?: number | null
           notes?: string | null
           purchase_date?: string | null
+          risk_level?: string | null
           type?: Database["public"]["Enums"]["investment_type"]
           units?: number | null
           updated_at?: string
@@ -345,6 +360,154 @@ export type Database = {
           reminder_days_before?: number | null
           title?: string
           type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      rental_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string | null
+          expense_date: string
+          id: string
+          rental_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          rental_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          rental_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_expenses_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rental_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          is_partial: boolean | null
+          late_fee: number | null
+          notes: string | null
+          payment_date: string
+          payment_month: string
+          rental_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          is_partial?: boolean | null
+          late_fee?: number | null
+          notes?: string | null
+          payment_date?: string
+          payment_month: string
+          rental_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_partial?: boolean | null
+          late_fee?: number | null
+          notes?: string | null
+          payment_date?: string
+          payment_month?: string
+          rental_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rental_payments_rental_id_fkey"
+            columns: ["rental_id"]
+            isOneToOne: false
+            referencedRelation: "rentals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rentals: {
+        Row: {
+          address: string | null
+          created_at: string
+          id: string
+          lease_end_date: string | null
+          lease_start_date: string | null
+          monthly_rent: number
+          name: string
+          notes: string | null
+          rent_due_day: number | null
+          security_deposit: number | null
+          status: Database["public"]["Enums"]["rental_status"]
+          tenant_email: string | null
+          tenant_name: string | null
+          tenant_phone: string | null
+          type: Database["public"]["Enums"]["rental_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          lease_end_date?: string | null
+          lease_start_date?: string | null
+          monthly_rent?: number
+          name: string
+          notes?: string | null
+          rent_due_day?: number | null
+          security_deposit?: number | null
+          status?: Database["public"]["Enums"]["rental_status"]
+          tenant_email?: string | null
+          tenant_name?: string | null
+          tenant_phone?: string | null
+          type: Database["public"]["Enums"]["rental_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          id?: string
+          lease_end_date?: string | null
+          lease_start_date?: string | null
+          monthly_rent?: number
+          name?: string
+          notes?: string | null
+          rent_due_day?: number | null
+          security_deposit?: number | null
+          status?: Database["public"]["Enums"]["rental_status"]
+          tenant_email?: string | null
+          tenant_name?: string | null
+          tenant_phone?: string | null
+          type?: Database["public"]["Enums"]["rental_type"]
           updated_at?: string
           user_id?: string
         }
@@ -512,6 +675,8 @@ export type Database = {
         | "neft"
         | "auto_pay"
         | "other"
+      rental_status: "active" | "vacant" | "pending" | "terminated"
+      rental_type: "shop" | "home" | "other"
       transaction_category:
         | "food"
         | "shopping"
@@ -679,6 +844,8 @@ export const Constants = {
         "auto_pay",
         "other",
       ],
+      rental_status: ["active", "vacant", "pending", "terminated"],
+      rental_type: ["shop", "home", "other"],
       transaction_category: [
         "food",
         "shopping",
