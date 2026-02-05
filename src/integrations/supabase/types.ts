@@ -284,6 +284,39 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_alert_settings: {
+        Row: {
+          alert_email: string | null
+          alerts_enabled: boolean | null
+          created_at: string
+          drift_threshold: number | null
+          id: string
+          last_alert_sent_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_email?: string | null
+          alerts_enabled?: boolean | null
+          created_at?: string
+          drift_threshold?: number | null
+          id?: string
+          last_alert_sent_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_email?: string | null
+          alerts_enabled?: boolean | null
+          created_at?: string
+          drift_threshold?: number | null
+          id?: string
+          last_alert_sent_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
