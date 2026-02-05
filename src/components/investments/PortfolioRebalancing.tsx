@@ -1,4 +1,5 @@
  import { useState, useMemo } from "react";
+ import { useEffect } from "react";
  import { motion } from "framer-motion";
  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
  import { Button } from "@/components/ui/button";
@@ -17,7 +18,12 @@
    AlertTriangle,
    CheckCircle,
  } from "lucide-react";
+ import { Bell, BellOff, Mail, Send, Loader2, Settings } from "lucide-react";
+ import { Switch } from "@/components/ui/switch";
+ import { Separator } from "@/components/ui/separator";
  import { useInvestmentSummary } from "@/hooks/useInvestments";
+ import { usePortfolioAlerts } from "@/hooks/usePortfolioAlerts";
+ import { useAuth } from "@/contexts/AuthContext";
  
  interface AllocationTarget {
    type: string;
@@ -36,8 +42,27 @@
  
  export function PortfolioRebalancing() {
    const { totalCurrentValue, byType, investments } = useInvestmentSummary();
+   const { user } = useAuth();
+   const {
+     settings,
+     isLoading: isLoadingSettings,
+     updateSettings,
+     sendDriftAlert,
+     isAlertsEnabled,
+     driftThreshold,
+     alertEmail,
+   } = usePortfolioAlerts();
+   
    const [allocations, setAllocations] = useState<AllocationTarget[]>(DEFAULT_ALLOCATIONS);
    const [isEditing, setIsEditing] = useState(false);
+   const [showAlertSettings, setShowAlertSettings] = useState(false);
+   const [localThreshold, setLocalThreshold] = useState(driftThreshold);
+   const [localEmail, setLocalEmail] = useState(alertEmail || "");
+ 
+   useEffect(() => {
+     setLocalThreshold(driftThreshold);
+     setLocalEmail(alertEmail || "");
+   }, [driftThreshold, alertEmail]);
  
    const formatCurrency = (amount: number) => {
      if (amount >= 100000) {
@@ -74,6 +99,10 @@
  
    const needsRebalancing = allocationAnalysis.some((a) => Math.abs(a.difference) >= 5);
  
+   const maxDrift = useMemo(() => {
+     return Math.max(...allocationAnalysis.map((a) => Math.abs(a.difference)));
+   }, [allocationAnalysis]);
+ 
    const handleAllocationChange = (index: number, newPercent: number) => {
      const newAllocations = [...allocations];
      newAllocations[index] = { ...newAllocations[index], targetPercent: newPercent };
@@ -81,6 +110,29 @@
    };
  
    const totalTargetPercent = allocations.reduce((sum, a) => sum + a.targetPercent, 0);
+ 
+   const handleSendAlert = () => {
+     const driftData = allocationAnalysis.map((a) => ({
+       type: a.type,
+       label: a.label,
+       currentPercent: a.currentPercent,
+       targetPercent: a.targetPercent,
+       difference: a.difference,
+     }));
+     sendDriftAlert.mutate({ driftData, maxDrift });
+   };
+ 
+   const handleToggleAlerts = () => {
+     updateSettings.mutate({ alertsEnabled: !isAlertsEnabled });
+   };
+ 
+   const handleSaveAlertSettings = () => {
+     updateSettings.mutate({
+       driftThreshold: localThreshold,
+       alertEmail: localEmail || null,
+     });
+     setShowAlertSettings(false);
+   };
  
    if (investments.length === 0) {
      return null;
@@ -97,8 +149,110 @@
          <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)}>
            {isEditing ? "Done" : "Edit Targets"}
          </Button>
+         <Button
+           variant="ghost"
+           size="icon"
+           onClick={() => setShowAlertSettings(!showAlertSettings)}
+           className="ml-1"
+         >
+           <Settings className="w-4 h-4" />
+         </Button>
        </CardHeader>
        <CardContent className="space-y-6">
+         {/* Alert Settings Panel */}
+         {showAlertSettings && (
+           <motion.div
+             initial={{ opacity: 0, height: 0 }}
+             animate={{ opacity: 1, height: "auto" }}
+             exit={{ opacity: 0, height: 0 }}
+             className="p-4 rounded-xl bg-secondary/50 space-y-4"
+           >
+             <div className="flex items-center justify-between">
+               <div className="flex items-center gap-3">
+                 {isAlertsEnabled ? (
+                   <Bell className="w-5 h-5 text-primary" />
+                 ) : (
+                   <BellOff className="w-5 h-5 text-muted-foreground" />
+                 )}
+                 <div>
+                   <p className="font-medium text-foreground text-sm">Drift Alerts</p>
+                   <p className="text-xs text-muted-foreground">
+                     Get notified when portfolio drifts
+                   </p>
+                 </div>
+               </div>
+               <Switch
+                 checked={isAlertsEnabled}
+                 onCheckedChange={handleToggleAlerts}
+                 disabled={updateSettings.isPending}
+               />
+             </div>
+ 
+             {isAlertsEnabled && (
+               <>
+                 <Separator />
+                 <div className="space-y-3">
+                   <div className="space-y-2">
+                     <Label className="text-sm">Alert Threshold: {localThreshold}%</Label>
+                     <Slider
+                       value={[localThreshold]}
+                       onValueChange={(v) => setLocalThreshold(v[0])}
+                       min={1}
+                       max={20}
+                       step={1}
+                       className="w-full"
+                     />
+                     <p className="text-xs text-muted-foreground">
+                       Send alert when drift exceeds this percentage
+                     </p>
+                   </div>
+ 
+                   <div className="space-y-2">
+                     <Label htmlFor="alert-email" className="flex items-center gap-2 text-sm">
+                       <Mail className="w-3 h-3" />
+                       Alert Email
+                     </Label>
+                     <Input
+                       id="alert-email"
+                       type="email"
+                       placeholder={user?.email || "your@email.com"}
+                       value={localEmail}
+                       onChange={(e) => setLocalEmail(e.target.value)}
+                       className="h-8 text-sm"
+                     />
+                   </div>
+ 
+                   <div className="flex gap-2">
+                     <Button
+                       size="sm"
+                       onClick={handleSaveAlertSettings}
+                       disabled={updateSettings.isPending}
+                     >
+                       {updateSettings.isPending ? (
+                         <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                       ) : null}
+                       Save Settings
+                     </Button>
+                     <Button
+                       size="sm"
+                       variant="outline"
+                       onClick={handleSendAlert}
+                       disabled={sendDriftAlert.isPending || maxDrift < 1}
+                     >
+                       {sendDriftAlert.isPending ? (
+                         <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                       ) : (
+                         <Send className="w-3 h-3 mr-1" />
+                       )}
+                       Test Alert
+                     </Button>
+                   </div>
+                 </div>
+               </>
+             )}
+           </motion.div>
+         )}
+ 
          {/* Status Banner */}
          {needsRebalancing ? (
            <motion.div
