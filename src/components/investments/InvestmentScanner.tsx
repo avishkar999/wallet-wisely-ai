@@ -18,6 +18,7 @@ import { AddInvestmentDialog } from "@/components/forms/AddInvestmentDialog";
 import { EditInvestmentDialog } from "@/components/forms/EditInvestmentDialog";
 import { useState } from "react";
 import { Tables } from "@/integrations/supabase/types";
+ import { PortfolioRebalancing } from "./PortfolioRebalancing";
 
 type Investment = Tables<"investments">;
 
@@ -333,6 +334,10 @@ export function InvestmentScanner() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
+
+       {/* Portfolio Rebalancing */}
+       <PortfolioRebalancing />
+
           <Card variant="glow" className="relative overflow-hidden">
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-accent/20 to-transparent rounded-bl-full" />
             <CardContent className="p-6">
