@@ -9,5 +9,8 @@ verify_jwt = false
 [functions.send-subscription-reminder]
 verify_jwt = false
  
- [functions.send-portfolio-drift-alert]
- verify_jwt = false
+[functions.send-portfolio-drift-alert]
+verify_jwt = false
+
+[functions.check-portfolio-drift]
+verify_jwt = false
