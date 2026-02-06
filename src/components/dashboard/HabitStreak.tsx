@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Flame, Calendar, TrendingUp, CheckCircle2 } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
-import { startOfWeek, addDays, isSameDay, parseISO, isToday, format } from "date-fns";
+import { startOfWeek, addDays, isSameDay, parseISO, isToday, format, startOfMonth, isAfter } from "date-fns";
 
 export function HabitStreak() {
   const { data: transactions = [] } = useTransactions();
@@ -9,6 +9,7 @@ export function HabitStreak() {
   // Calculate streak based on days with tracked expenses
   const today = new Date();
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const monthStart = startOfMonth(today);
   
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(weekStart, i);
@@ -24,9 +25,15 @@ export function HabitStreak() {
     };
   });
 
-  // Calculate current streak
-  const calculateStreak = () => {
-    const sortedDates = transactions
+  // Calculate current month streak (resets at month start)
+  const calculateMonthlyStreak = () => {
+    // Only consider transactions from current month
+    const monthTransactions = transactions.filter(t => {
+      const tDate = parseISO(t.transaction_date);
+      return isAfter(tDate, monthStart) || isSameDay(tDate, monthStart);
+    });
+
+    const sortedDates = monthTransactions
       .map(t => parseISO(t.transaction_date))
       .sort((a, b) => b.getTime() - a.getTime());
     
@@ -35,8 +42,15 @@ export function HabitStreak() {
     let streak = 0;
     let currentDate = new Date();
     
-    for (let i = 0; i < 30; i++) {
+    // Only count days within current month
+    const daysInMonth = today.getDate();
+    
+    for (let i = 0; i < daysInMonth; i++) {
       const checkDate = addDays(currentDate, -i);
+      
+      // Don't count days before month start
+      if (checkDate < monthStart) break;
+      
       const hasActivity = sortedDates.some(d => isSameDay(d, checkDate));
       
       if (hasActivity) {
@@ -49,8 +63,9 @@ export function HabitStreak() {
     return streak;
   };
 
-  const streak = calculateStreak();
+  const streak = calculateMonthlyStreak();
   const activeDays = weekDays.filter(d => d.hasActivity).length;
+  const currentMonthName = format(today, "MMMM");
 
   return (
     <motion.div
@@ -66,7 +81,7 @@ export function HabitStreak() {
           </div>
           <div>
             <h3 className="text-sm font-semibold text-foreground">Tracking Streak</h3>
-            <p className="text-xs text-muted-foreground">Stay consistent</p>
+            <p className="text-xs text-muted-foreground">{currentMonthName} streak</p>
           </div>
         </div>
         <motion.div 
