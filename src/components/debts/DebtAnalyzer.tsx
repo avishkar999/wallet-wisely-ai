@@ -21,7 +21,8 @@ import { AddDebtDialog } from "@/components/forms/AddDebtDialog";
 import { EditDebtDialog } from "@/components/forms/EditDebtDialog";
 import { useState } from "react";
 import { Tables } from "@/integrations/supabase/types";
- import { DebtPayoffSimulator } from "./DebtPayoffSimulator";
+import { DebtPayoffSimulator } from "./DebtPayoffSimulator";
+import { DebtStrategyComparison } from "./DebtStrategyComparison";
 
 type Debt = Tables<"debts">;
 
@@ -368,6 +369,9 @@ export function DebtAnalyzer() {
 
        {/* Debt Payoff Simulator */}
        <DebtPayoffSimulator />
+
+       {/* Strategy Comparison */}
+       <DebtStrategyComparison />
     </div>
   );
 }

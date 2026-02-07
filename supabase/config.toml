@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.check-portfolio-drift]
 verify_jwt = false
+
+[functions.send-weekly-portfolio-digest]
+verify_jwt = false
