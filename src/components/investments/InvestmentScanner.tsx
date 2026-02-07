@@ -18,7 +18,8 @@ import { AddInvestmentDialog } from "@/components/forms/AddInvestmentDialog";
 import { EditInvestmentDialog } from "@/components/forms/EditInvestmentDialog";
 import { useState } from "react";
 import { Tables } from "@/integrations/supabase/types";
- import { PortfolioRebalancing } from "./PortfolioRebalancing";
+import { PortfolioRebalancing } from "./PortfolioRebalancing";
+import { BenchmarkComparison } from "./BenchmarkComparison";
 
 type Investment = Tables<"investments">;
 
@@ -337,6 +338,9 @@ export function InvestmentScanner() {
 
        {/* Portfolio Rebalancing */}
        <PortfolioRebalancing />
+
+       {/* Benchmark Comparison */}
+       <BenchmarkComparison />
 
           <Card variant="glow" className="relative overflow-hidden">
             <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-accent/20 to-transparent rounded-bl-full" />
