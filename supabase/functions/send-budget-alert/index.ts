@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
@@ -6,17 +7,8 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-interface BudgetAlertRequest {
-  email: string;
-  userName: string;
-  category: string;
-  budgeted: number;
-  spent: number;
-  percentUsed: number;
-}
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("en-IN", {
@@ -33,7 +25,66 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, userName, category, budgeted, spent, percentUsed }: BudgetAlertRequest = await req.json();
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Parse and validate input
+    const body = await req.json();
+    const { email, userName, category, budgeted, spent, percentUsed } = body;
+
+    if (!email || typeof email !== "string" || email.length > 255) {
+      return new Response(JSON.stringify({ error: "Invalid email" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    if (!category || typeof category !== "string" || category.length > 100) {
+      return new Response(JSON.stringify({ error: "Invalid category" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    if (typeof budgeted !== "number" || typeof spent !== "number" || typeof percentUsed !== "number") {
+      return new Response(JSON.stringify({ error: "Invalid numeric fields" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    if (budgeted < 0 || budgeted > 100000000 || spent < 0 || spent > 100000000) {
+      return new Response(JSON.stringify({ error: "Amount out of range" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const safeName = String(userName || "User").slice(0, 100).replace(/[<>&"']/g, "");
+    const safeCategory = category.replace(/[<>&"']/g, "");
 
     const isOverBudget = spent > budgeted;
     const statusColor = isOverBudget ? "#ef4444" : "#f59e0b";
@@ -42,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "WealthPilot <onboarding@resend.dev>",
       to: [email],
-      subject: `${statusText}: ${category} at ${percentUsed}%`,
+      subject: `${statusText}: ${safeCategory} at ${Math.round(percentUsed)}%`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -69,8 +120,8 @@ const handler = async (req: Request): Promise<Response> => {
               <h1>💰 WealthPilot Budget Alert</h1>
             </div>
             <div class="content">
-              <p>Hi ${userName},</p>
-              <p>Your spending in <strong>${category}</strong> has reached <strong>${percentUsed}%</strong> of your budget.</p>
+              <p>Hi ${safeName},</p>
+              <p>Your spending in <strong>${safeCategory}</strong> has reached <strong>${Math.round(percentUsed)}%</strong> of your budget.</p>
               
               <div class="alert-box">
                 <h3 style="margin: 0 0 15px 0; color: ${statusColor};">${statusText}</h3>
