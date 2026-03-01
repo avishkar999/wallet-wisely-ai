@@ -8,6 +8,8 @@
 @import "@fontsource/plus-jakarta-sans/700.css";
 @import "@fontsource/plus-jakarta-sans/800.css";
 @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=EB+Garamond&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap");
 
 @layer base {
   :root {
@@ -23,9 +25,9 @@
 
     /* Calming mint/seafoam primary */
     --primary: 168 60% 55%;
-    --primary-foreground: 215 19.3182% 34.5098%;
+    --primary-foreground: 228 33% 6%;
 
-    --secondary: 215 16.318% 46.8627%;
+    --secondary: 228 25% 12%;
     --secondary-foreground: 220 20% 90%;
 
     --muted: 228 20% 16%;
@@ -78,6 +80,12 @@
     --sidebar-accent-foreground: 220 20% 90%;
     --sidebar-border: 228 20% 14%;
     --sidebar-ring: 168 60% 55%;
+    --font-serif: "EB Garamond", ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
+    --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+  }
+  .dark {
+    --font-serif: "EB Garamond", ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
+    --font-mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   }
 }
 

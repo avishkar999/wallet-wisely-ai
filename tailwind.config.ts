@@ -25,6 +25,7 @@ export default {
   				'Noto Color Emoji'
   			],
   			serif: [
+  				'EB Garamond',
   				'ui-serif',
   				'Georgia',
   				'Cambria',
@@ -33,6 +34,7 @@ export default {
   				'serif'
   			],
   			mono: [
+  				'Roboto Mono',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',
