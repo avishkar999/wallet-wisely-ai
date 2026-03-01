@@ -7,33 +7,60 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface MonthlyDigestRequest {
-  userId?: string;
-  email: string;
-  displayName?: string;
-}
-
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Authenticate user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const authClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const userId = claimsData.claims.sub;
+
+    // Parse and validate input
+    const body = await req.json();
+    const { email, displayName } = body;
+
+    if (!email || typeof email !== "string" || email.length > 255) {
+      return new Response(JSON.stringify({ error: "Invalid email" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    const safeName = displayName ? String(displayName).slice(0, 100).replace(/[<>&"']/g, "") : null;
+
+    // Use service role for data fetching scoped to authenticated user
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { userId, email, displayName }: MonthlyDigestRequest = await req.json();
-
-    console.log(`Generating monthly digest for user: ${userId || 'manual'}, email: ${email}`);
-
-    if (!email) {
-      throw new Error("Email is required");
-    }
+    console.log(`Generating monthly digest for user: ${userId}, email: ${email}`);
 
     // Calculate date range for the previous month
     const now = new Date();
@@ -41,18 +68,13 @@ const handler = async (req: Request): Promise<Response> => {
     const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
     const monthName = startOfLastMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-    // Fetch transactions for the month
-    let transactionsQuery = supabase
+    // Fetch transactions scoped to authenticated user only
+    const { data: transactions, error: txError } = await supabase
       .from("transactions")
       .select("*")
+      .eq("user_id", userId)
       .gte("transaction_date", startOfLastMonth.toISOString().split("T")[0])
       .lte("transaction_date", endOfLastMonth.toISOString().split("T")[0]);
-
-    if (userId) {
-      transactionsQuery = transactionsQuery.eq("user_id", userId);
-    }
-
-    const { data: transactions, error: txError } = await transactionsQuery;
 
     if (txError) {
       console.error("Error fetching transactions:", txError);
@@ -83,7 +105,7 @@ const handler = async (req: Request): Promise<Response> => {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5);
 
-    // Detect potential subscriptions (recurring expenses)
+    // Detect potential subscriptions
     const expensesByName: Record<string, number[]> = {};
     transactions
       ?.filter((t) => t.type === "expense")
@@ -106,23 +128,18 @@ const handler = async (req: Request): Promise<Response> => {
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
 
-    // Fetch subscription decisions for cancellation savings
-    let decisionsQuery = supabase
+    // Fetch cancellation savings scoped to user
+    const { data: cancelledSubs } = await supabase
       .from("subscription_decisions")
       .select("*")
-      .eq("status", "cancelled");
+      .eq("status", "cancelled")
+      .eq("user_id", userId);
 
-    if (userId) {
-      decisionsQuery = decisionsQuery.eq("user_id", userId);
-    }
-
-    const { data: cancelledSubs } = await decisionsQuery;
     const cancellationSavings = cancelledSubs?.reduce(
       (sum, d) => sum + Number(d.monthly_amount),
       0
     ) || 0;
 
-    // Format currency
     const formatCurrency = (amount: number) =>
       new Intl.NumberFormat("en-IN", {
         style: "currency",
@@ -142,18 +159,15 @@ const handler = async (req: Request): Promise<Response> => {
       </head>
       <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f4f4f5; margin: 0; padding: 20px;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-          <!-- Header -->
           <div style="background: linear-gradient(135deg, #10b981, #059669); padding: 32px; text-align: center;">
             <h1 style="color: #ffffff; margin: 0; font-size: 28px;">💰 Monthly Financial Digest</h1>
             <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0; font-size: 16px;">${monthName}</p>
           </div>
 
-          <!-- Main Content -->
           <div style="padding: 32px;">
-            ${displayName ? `<p style="color: #374151; font-size: 16px; margin-bottom: 24px;">Hi ${displayName},</p>` : ''}
+            ${safeName ? `<p style="color: #374151; font-size: 16px; margin-bottom: 24px;">Hi ${safeName},</p>` : ''}
             <p style="color: #374151; font-size: 16px; margin-bottom: 24px;">Here's your financial summary for the past month:</p>
 
-            <!-- Summary Cards -->
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px;">
               <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; text-align: center;">
                 <p style="color: #166534; margin: 0 0 8px; font-size: 14px;">Income</p>
@@ -173,14 +187,13 @@ const handler = async (req: Request): Promise<Response> => {
               </div>
             </div>
 
-            <!-- Top Spending Categories -->
             ${sortedCategories.length > 0 ? `
             <div style="margin-bottom: 32px;">
               <h2 style="color: #111827; font-size: 18px; margin-bottom: 16px;">📊 Top Spending Categories</h2>
               <table style="width: 100%; border-collapse: collapse;">
                 ${sortedCategories.map(([category, amount], index) => `
                   <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px 0; color: #374151; text-transform: capitalize;">${index + 1}. ${category}</td>
+                    <td style="padding: 12px 0; color: #374151; text-transform: capitalize;">${index + 1}. ${category.replace(/[<>&"']/g, "")}</td>
                     <td style="padding: 12px 0; color: #111827; font-weight: 600; text-align: right;">${formatCurrency(amount)}</td>
                   </tr>
                 `).join('')}
@@ -188,7 +201,6 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             ` : ''}
 
-            <!-- Detected Recurring Expenses -->
             ${potentialSubscriptions.length > 0 ? `
             <div style="margin-bottom: 32px;">
               <h2 style="color: #111827; font-size: 18px; margin-bottom: 16px;">🔄 Detected Recurring Expenses</h2>
@@ -196,7 +208,7 @@ const handler = async (req: Request): Promise<Response> => {
               <table style="width: 100%; border-collapse: collapse;">
                 ${potentialSubscriptions.map((sub) => `
                   <tr style="border-bottom: 1px solid #e5e7eb;">
-                    <td style="padding: 12px 0; color: #374151; text-transform: capitalize;">${sub.name}</td>
+                    <td style="padding: 12px 0; color: #374151; text-transform: capitalize;">${sub.name.replace(/[<>&"']/g, "")}</td>
                     <td style="padding: 12px 0; color: #6b7280; text-align: center;">${sub.count}x</td>
                     <td style="padding: 12px 0; color: #111827; font-weight: 600; text-align: right;">${formatCurrency(sub.total)}</td>
                   </tr>
@@ -205,7 +217,6 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             ` : ''}
 
-            <!-- Cancellation Savings -->
             ${cancellationSavings > 0 ? `
             <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin-bottom: 32px; text-align: center;">
               <h3 style="color: #166534; margin: 0 0 8px; font-size: 16px;">🎉 Subscription Savings</h3>
@@ -214,7 +225,6 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             ` : ''}
 
-            <!-- Tips -->
             <div style="background-color: #fefce8; padding: 20px; border-radius: 8px; margin-bottom: 24px;">
               <h3 style="color: #854d0e; margin: 0 0 12px; font-size: 16px;">💡 Quick Tips</h3>
               <ul style="color: #713f12; margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6;">
@@ -227,7 +237,6 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
           </div>
 
-          <!-- Footer -->
           <div style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
             <p style="color: #6b7280; margin: 0; font-size: 14px;">
               This is your automated monthly digest from WalletWisely.
@@ -241,7 +250,6 @@ const handler = async (req: Request): Promise<Response> => {
       </html>
     `;
 
-    // Send email
     const emailResponse = await resend.emails.send({
       from: "WalletWisely <onboarding@resend.dev>",
       to: [email],
