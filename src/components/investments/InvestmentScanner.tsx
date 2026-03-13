@@ -20,12 +20,15 @@ import { useState } from "react";
 import { Tables } from "@/integrations/supabase/types";
 import { PortfolioRebalancing } from "./PortfolioRebalancing";
 import { BenchmarkComparison } from "./BenchmarkComparison";
+import { PortfolioHistory } from "./PortfolioHistory";
+import { useRecordPortfolioSnapshot } from "@/hooks/usePortfolioSnapshots";
 
 type Investment = Tables<"investments">;
 
 export function InvestmentScanner() {
   const { data: investments, isLoading } = useInvestments();
   const { totalCurrentValue: totalValue, totalInvested, totalGain: totalReturn, overallChangePercent: returnPercentage, byType: byTypeRecord } = useInvestmentSummary();
+  useRecordPortfolioSnapshot();
   
   // Convert byType record to array format
   const byType = Object.entries(byTypeRecord).map(([type, data]) => ({
@@ -373,6 +376,8 @@ export function InvestmentScanner() {
           </Card>
         </motion.div>
       )}
+
+      <PortfolioHistory />
 
       <AddInvestmentDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
       <EditInvestmentDialog
