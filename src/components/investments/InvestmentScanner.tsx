@@ -377,6 +377,8 @@ export function InvestmentScanner() {
         </motion.div>
       )}
 
+      <PortfolioHistory />
+
       <AddInvestmentDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
       <EditInvestmentDialog
         open={!!selectedInvestment}
