@@ -46,19 +46,18 @@ export function useRecordPortfolioSnapshot() {
 
       const today = new Date().toISOString().split("T")[0];
 
+      const snapshotData = {
+        user_id: user.id,
+        snapshot_date: today,
+        total_invested: totalInvested,
+        total_current_value: totalCurrentValue,
+        total_gain: totalGain,
+        breakdown: byType as unknown as Record<string, unknown>,
+      };
+
       const { data, error } = await supabase
         .from("portfolio_snapshots")
-        .upsert(
-          {
-            user_id: user.id,
-            snapshot_date: today,
-            total_invested: totalInvested,
-            total_current_value: totalCurrentValue,
-            total_gain: totalGain,
-            breakdown: byType as unknown as Record<string, unknown>,
-          },
-          { onConflict: "user_id,snapshot_date" }
-        )
+        .upsert(snapshotData as any, { onConflict: "user_id,snapshot_date" })
         .select()
         .single();
 
