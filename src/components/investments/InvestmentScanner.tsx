@@ -28,6 +28,7 @@ type Investment = Tables<"investments">;
 export function InvestmentScanner() {
   const { data: investments, isLoading } = useInvestments();
   const { totalCurrentValue: totalValue, totalInvested, totalGain: totalReturn, overallChangePercent: returnPercentage, byType: byTypeRecord } = useInvestmentSummary();
+  useRecordPortfolioSnapshot();
   
   // Convert byType record to array format
   const byType = Object.entries(byTypeRecord).map(([type, data]) => ({
