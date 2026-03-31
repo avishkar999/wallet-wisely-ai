@@ -11,7 +11,7 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function HomeRoute() {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -22,11 +22,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  return <>{children}</>;
+  return user ? <Index /> : <Landing />;
 }
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
@@ -55,9 +51,8 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/welcome" element={<Landing />} />
             <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+            <Route path="/" element={<HomeRoute />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
