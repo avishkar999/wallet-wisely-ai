@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Wallet, TrendingUp, PieChart, Shield, Sparkles, ArrowRight,
-  BarChart3, Target, CreditCard, Bell, Calendar, Brain
+  BarChart3, Target, CreditCard, Bell, Calendar, Brain,
+  Star, Quote, Users, CheckCircle2
 } from "lucide-react";
 
 const features = [
@@ -20,6 +21,37 @@ const stats = [
   { value: "256-bit", label: "Encryption" },
   { value: "Real-time", label: "Sync" },
   { value: "AI", label: "Powered insights" },
+];
+
+const testimonials = [
+  {
+    name: "Priya Sharma",
+    role: "Freelance Designer",
+    quote: "Wallet Wisely completely changed how I manage my finances. The budget alerts alone have saved me from overspending every month.",
+    rating: 5,
+    avatar: "PS",
+  },
+  {
+    name: "Rahul Mehta",
+    role: "Software Engineer",
+    quote: "The investment portfolio tracker is incredible. I can see all my mutual funds, stocks, and FDs in one place with real performance data.",
+    rating: 5,
+    avatar: "RM",
+  },
+  {
+    name: "Ananya Patel",
+    role: "Small Business Owner",
+    quote: "The debt payoff simulator helped me create a plan to become debt-free in 18 months. The AI advisor suggestions are spot on!",
+    rating: 5,
+    avatar: "AP",
+  },
+];
+
+const socialProof = [
+  { icon: Users, value: "10,000+", label: "Active Users" },
+  { icon: CheckCircle2, value: "₹50Cr+", label: "Finances Tracked" },
+  { icon: Star, value: "4.9/5", label: "User Rating" },
+  { icon: Shield, value: "99.9%", label: "Uptime" },
 ];
 
 export default function Landing() {
@@ -100,6 +132,28 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Social Proof Bar */}
+      <section className="py-12 px-4 border-y border-border/50 bg-muted/30">
+        <div className="container mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto"
+          >
+            {socialProof.map((item) => (
+              <div key={item.label} className="flex flex-col items-center gap-2 text-center">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <item.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div className="text-2xl font-bold">{item.value}</div>
+                <div className="text-sm text-muted-foreground">{item.label}</div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* Features */}
       <section id="features" className="py-20 px-4 bg-card/40">
         <div className="container mx-auto">
@@ -133,6 +187,60 @@ export default function Landing() {
                 </div>
                 <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-14"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-sm font-medium mb-4">
+              <Quote className="h-4 w-4" /> What Our Users Say
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+              Loved by{" "}
+              <span className="text-primary">Thousands</span>
+            </h2>
+            <p className="text-muted-foreground max-w-xl mx-auto">
+              Real stories from people who transformed their financial lives.
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {testimonials.map((t, i) => (
+              <motion.div
+                key={t.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15 }}
+                className="p-6 rounded-2xl bg-card border border-border/60 hover:border-primary/30 transition-all hover:shadow-lg hover:shadow-primary/5 flex flex-col"
+              >
+                <div className="flex items-center gap-1 mb-4">
+                  {Array.from({ length: t.rating }).map((_, idx) => (
+                    <Star key={idx} className="h-4 w-4 fill-primary text-primary" />
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed flex-1 mb-6">
+                  "{t.quote}"
+                </p>
+                <div className="flex items-center gap-3 pt-4 border-t border-border/50">
+                  <div className="h-10 w-10 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <div className="font-medium text-sm">{t.name}</div>
+                    <div className="text-xs text-muted-foreground">{t.role}</div>
+                  </div>
+                </div>
               </motion.div>
             ))}
           </div>
