@@ -53,10 +53,11 @@ export function MonthlySummaryCard() {
     { icon: Tag, title: "Top category", value: label(top?.[0]), tone: "text-foreground" },
     {
       icon: Receipt,
-      title: "Balance",
-      value: fmt(balance),
-      tone: balance < 0 ? "text-destructive" : "text-foreground",
+      title: "Transactions",
+      value: String(monthTransactionCount),
+      tone: "text-foreground",
     },
+
   ];
 
   return (
