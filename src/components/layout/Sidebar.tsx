@@ -35,6 +35,8 @@ const navItems = [
   { id: "budget", label: "Budget", icon: Target },
   { id: "goals", label: "Goals", icon: Goal },
   { id: "history", label: "History", icon: History },
+  { id: "monthly", label: "Monthly History", icon: Archive },
+
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
   { id: "expenses", label: "Expenses", icon: Wallet },
