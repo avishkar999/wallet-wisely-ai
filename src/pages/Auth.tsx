@@ -26,6 +26,8 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
+  const nextParam = new URLSearchParams(window.location.search).get("next");
+  const redirectTo = nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//") ? nextParam : "/";
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,7 +63,7 @@ export default function Auth() {
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
-          navigate("/");
+          navigate(redirectTo);
         }
       } else {
         const result = signUpSchema.safeParse({ email, password, displayName });
@@ -91,7 +93,7 @@ export default function Auth() {
             title: "Account Created!",
             description: "Welcome to WealthPilot. Let's manage your finances!",
           });
-          navigate("/");
+          navigate(redirectTo);
         }
       }
     } catch (err) {
