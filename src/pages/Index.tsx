@@ -26,10 +26,16 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMonthlyReset } from "@/hooks/useMonthlyReset";
+import { useMonthlyArchive } from "@/hooks/useMonthlySummaries";
+import { MonthlyHistory } from "@/components/history/MonthlyHistory";
+import { MonthlySummaryCard } from "@/components/dashboard/MonthlySummaryCard";
 
 const Index = () => {
   // Perform monthly data reset when month changes
   useMonthlyReset();
+  // Archive completed months into Monthly History on app open
+  useMonthlyArchive();
+
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
