@@ -55,7 +55,8 @@ const handler = async (req: Request): Promise<Response> => {
     const body = await req.json();
     const { email, userName, category, budgeted, spent, percentUsed } = body;
 
-    if (!email || typeof email !== "string" || email.length > 255) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || typeof email !== "string" || email.length > 255 || !emailRegex.test(email)) {
       return new Response(JSON.stringify({ error: "Invalid email" }), {
         status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
