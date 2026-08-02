@@ -257,6 +257,57 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_summaries: {
+        Row: {
+          category_breakdown: Json
+          created_at: string
+          highest_category: string | null
+          highest_category_amount: number
+          id: string
+          month: string
+          remaining_balance: number
+          savings_rate: number
+          total_expenses: number
+          total_income: number
+          total_savings: number
+          transaction_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_breakdown?: Json
+          created_at?: string
+          highest_category?: string | null
+          highest_category_amount?: number
+          id?: string
+          month: string
+          remaining_balance?: number
+          savings_rate?: number
+          total_expenses?: number
+          total_income?: number
+          total_savings?: number
+          transaction_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_breakdown?: Json
+          created_at?: string
+          highest_category?: string | null
+          highest_category_amount?: number
+          id?: string
+          month?: string
+          remaining_balance?: number
+          savings_rate?: number
+          total_expenses?: number
+          total_income?: number
+          total_savings?: number
+          transaction_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           created_at: string
