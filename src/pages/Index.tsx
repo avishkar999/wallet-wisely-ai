@@ -173,6 +173,10 @@ const Dashboard = () => {
       {/* Hero Health Score */}
       <HeroHealthScore />
 
+      {/* Current month summary */}
+      <MonthlySummaryCard />
+
+
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left Column */}
