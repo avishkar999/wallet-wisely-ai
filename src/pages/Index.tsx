@@ -26,10 +26,16 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMonthlyReset } from "@/hooks/useMonthlyReset";
+import { useMonthlyArchive } from "@/hooks/useMonthlySummaries";
+import { MonthlyHistory } from "@/components/history/MonthlyHistory";
+import { MonthlySummaryCard } from "@/components/dashboard/MonthlySummaryCard";
 
 const Index = () => {
   // Perform monthly data reset when month changes
   useMonthlyReset();
+  // Archive completed months into Monthly History on app open
+  useMonthlyArchive();
+
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -50,6 +56,9 @@ const Index = () => {
         return <GoalTracker />;
       case "history":
         return <TransactionsHistory />;
+      case "monthly":
+        return <MonthlyHistory />;
+
       case "analytics":
         return <SpendingAnalytics />;
       case "calendar":
@@ -113,7 +122,12 @@ const Index = () => {
                   className="text-lg sm:text-xl font-semibold text-foreground capitalize flex items-center gap-2"
                 >
                   {activeTab === "dashboard" && <Sparkles className="w-5 h-5 text-primary" />}
-                  {activeTab === "advisor" ? "AI Financial Advisor" : activeTab}
+                  {activeTab === "advisor"
+                    ? "AI Financial Advisor"
+                    : activeTab === "monthly"
+                    ? "Monthly History"
+                    : activeTab}
+
                 </motion.h1>
                 <p className="text-xs text-muted-foreground">
                   {new Date().toLocaleDateString('en-IN', { 
@@ -158,6 +172,10 @@ const Dashboard = () => {
     >
       {/* Hero Health Score */}
       <HeroHealthScore />
+
+      {/* Current month summary */}
+      <MonthlySummaryCard />
+
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
