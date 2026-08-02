@@ -122,7 +122,12 @@ const Index = () => {
                   className="text-lg sm:text-xl font-semibold text-foreground capitalize flex items-center gap-2"
                 >
                   {activeTab === "dashboard" && <Sparkles className="w-5 h-5 text-primary" />}
-                  {activeTab === "advisor" ? "AI Financial Advisor" : activeTab}
+                  {activeTab === "advisor"
+                    ? "AI Financial Advisor"
+                    : activeTab === "monthly"
+                    ? "Monthly History"
+                    : activeTab}
+
                 </motion.h1>
                 <p className="text-xs text-muted-foreground">
                   {new Date().toLocaleDateString('en-IN', { 
