@@ -1,0 +1,212 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://xgwgnxjondblftyamkgu.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "money-maestro",
+      "version": "0.1.0",
+      "title": "Money Maestro"
+    },
+    "tools": [
+      {
+        "name": "financial_summary",
+        "title": "Financial summary",
+        "description": "Summarize the signed-in user's finances for a period: income, expenses, savings rate, spending by category, total debt and portfolio value.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "months": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 24,
+              "default": 1,
+              "description": "How many recent months to include."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_transactions",
+        "title": "List transactions",
+        "description": "List the signed-in user's recent income and expense transactions, newest first.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20,
+              "description": "Maximum number of transactions to return."
+            },
+            "category": {
+              "type": "string",
+              "description": "Optional category filter, e.g. food, bills, income."
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "income",
+                "expense"
+              ],
+              "description": "Optional transaction type filter."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_transaction",
+        "title": "Add transaction",
+        "description": "Record a new income or expense transaction for the signed-in user.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Short label, e.g. 'Groceries'."
+            },
+            "amount": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Amount in rupees."
+            },
+            "type": {
+              "type": "string",
+              "enum": [
+                "income",
+                "expense"
+              ],
+              "description": "Whether this is income or an expense."
+            },
+            "category": {
+              "type": "string",
+              "enum": [
+                "food",
+                "shopping",
+                "transport",
+                "entertainment",
+                "bills",
+                "health",
+                "recharges",
+                "education",
+                "travel",
+                "income",
+                "other"
+              ],
+              "default": "other",
+              "description": "Transaction category."
+            },
+            "payment_method": {
+              "type": "string",
+              "enum": [
+                "upi",
+                "debit_card",
+                "credit_card",
+                "cash",
+                "neft",
+                "auto_pay",
+                "other"
+              ],
+              "default": "upi",
+              "description": "Payment method used."
+            },
+            "transaction_date": {
+              "type": "string",
+              "description": "Date in YYYY-MM-DD format. Defaults to today."
+            },
+            "description": {
+              "type": "string",
+              "description": "Optional note."
+            }
+          },
+          "required": [
+            "name",
+            "amount",
+            "type"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_debts",
+        "title": "List debts",
+        "description": "List the signed-in user's debts with outstanding amounts, interest rates and EMIs.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_investments",
+        "title": "List investments",
+        "description": "List the signed-in user's investment holdings with invested and current values.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_savings_goals",
+        "title": "List savings goals",
+        "description": "List the signed-in user's savings goals with progress toward each target.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
