@@ -20,8 +20,15 @@ const label = (s?: string | null) =>
   s ? s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, " ") : "—";
 
 export function MonthlySummaryCard() {
-  const { income, expenses, balance, savingsRate, categoryTotals, isLoading } =
-    useFinancialSummary();
+  const {
+    income,
+    expenses,
+    balance,
+    savingsRate,
+    categoryTotals,
+    monthTransactionCount,
+    isLoading,
+  } = useFinancialSummary();
   const { totalBudgeted, totalSpent } = useBudgetSummary();
 
   const now = new Date();
@@ -29,9 +36,7 @@ export function MonthlySummaryCard() {
   const dailyAverage = daysElapsed > 0 ? expenses / daysElapsed : 0;
 
   const top = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
-  const txnCount = Object.keys(categoryTotals).length
-    ? undefined
-    : undefined; // placeholder replaced below
+
 
   const stats = [
     { icon: TrendingUp, title: "Income", value: fmt(income), tone: "text-success" },
