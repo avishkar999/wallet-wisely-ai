@@ -56,6 +56,9 @@ const Index = () => {
         return <GoalTracker />;
       case "history":
         return <TransactionsHistory />;
+      case "monthly":
+        return <MonthlyHistory />;
+
       case "analytics":
         return <SpendingAnalytics />;
       case "calendar":
