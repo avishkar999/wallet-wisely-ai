@@ -147,5 +147,7 @@ export function useFinancialSummary() {
     categoryTotals,
     isLoading,
     transactionCount: transactions.length,
+    monthTransactionCount: currentMonthTransactions.length,
   };
 }
+
