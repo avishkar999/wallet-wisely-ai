@@ -85,7 +85,7 @@ export function useUpdateRecurringTransaction() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; next_due_date?: string; is_active?: boolean }) => {
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<RecurringTransactionInsert>) => {
       const { data, error } = await supabase
         .from("recurring_transactions")
         .update(updates)
