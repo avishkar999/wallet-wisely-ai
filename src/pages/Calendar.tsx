@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, TrendingUp, Trendi
 import { cn } from "@/lib/utils";
 import { AddRecurringDialog } from "@/components/calendar/AddRecurringDialog";
 import { RecurringList } from "@/components/calendar/RecurringList";
+import { RecurringManager } from "@/components/recurring/RecurringManager";
 import { UpcomingReminders } from "@/components/calendar/UpcomingReminders";
 
 export function CalendarPage() {
@@ -345,6 +346,10 @@ export function CalendarPage() {
           </Card>
         </motion.div>
       </div>
+
+      <motion.div variants={itemVariants}>
+        <RecurringManager />
+      </motion.div>
     </motion.div>
   );
 }
