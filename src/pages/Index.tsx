@@ -29,12 +29,16 @@ import { useMonthlyReset } from "@/hooks/useMonthlyReset";
 import { useMonthlyArchive } from "@/hooks/useMonthlySummaries";
 import { MonthlyHistory } from "@/components/history/MonthlyHistory";
 import { MonthlySummaryCard } from "@/components/dashboard/MonthlySummaryCard";
+import { useAutoRecurring } from "@/hooks/useAutoRecurring";
 
 const Index = () => {
   // Perform monthly data reset when month changes
   useMonthlyReset();
   // Archive completed months into Monthly History on app open
   useMonthlyArchive();
+  // Auto-generate due recurring transactions (bills, EMI, subscriptions, income)
+  useAutoRecurring();
+
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
