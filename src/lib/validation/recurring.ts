@@ -95,11 +95,17 @@ export type RecurringFormValues = z.infer<typeof recurringSchema>;
 
 export type FieldErrors = Partial<Record<keyof RecurringFormValues, string>>;
 
-export function validateRecurring(
-  input: unknown
-): { ok: true; data: RecurringFormValues } | { ok: false; errors: FieldErrors } {
+export type RecurringValidationSuccess = { ok: true; data: RecurringFormValues };
+export type RecurringValidationFailure = { ok: false; errors: FieldErrors };
+export type RecurringValidationResult =
+  | RecurringValidationSuccess
+  | RecurringValidationFailure;
+
+export function validateRecurring(input: unknown): RecurringValidationResult {
   const parsed = recurringSchema.safeParse(input);
-  if (parsed.success) return { ok: true, data: parsed.data };
+  if (parsed.success) {
+    return { ok: true, data: parsed.data as RecurringFormValues };
+  }
 
   const errors: FieldErrors = {};
   for (const issue of parsed.error.issues) {
