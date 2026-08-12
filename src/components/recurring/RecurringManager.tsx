@@ -63,7 +63,12 @@ export function RecurringManager() {
   };
 
   const changeDueDate = async (item: RecurringTransaction, value: string) => {
-    if (!value) return;
+    const error = validateDueDate(value);
+    if (error) {
+      setDateErrors((prev) => ({ ...prev, [item.id]: error }));
+      return;
+    }
+    setDateErrors((prev) => ({ ...prev, [item.id]: undefined }));
     try {
       await updateRecurring.mutateAsync({ id: item.id, next_due_date: value });
       toast.success("Next due date updated");
