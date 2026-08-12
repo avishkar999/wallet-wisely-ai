@@ -17,6 +17,7 @@ import { format, differenceInDays, isBefore, isToday } from "date-fns";
 import { CalendarClock, Pencil, Trash2, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { validateDueDate } from "@/lib/validation/recurring";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,6 +52,7 @@ export function RecurringManager() {
 
   const [editItem, setEditItem] = useState<RecurringTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [dateErrors, setDateErrors] = useState<Record<string, string | undefined>>({});
 
   const togglePause = async (item: RecurringTransaction) => {
     const next = !(item.is_active ?? true);
@@ -63,7 +65,12 @@ export function RecurringManager() {
   };
 
   const changeDueDate = async (item: RecurringTransaction, value: string) => {
-    if (!value) return;
+    const error = validateDueDate(value);
+    if (error) {
+      setDateErrors((prev) => ({ ...prev, [item.id]: error }));
+      return;
+    }
+    setDateErrors((prev) => ({ ...prev, [item.id]: undefined }));
     try {
       await updateRecurring.mutateAsync({ id: item.id, next_due_date: value });
       toast.success("Next due date updated");
@@ -163,10 +170,16 @@ export function RecurringManager() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <Input
                           type="date"
+                          min="2000-01-01"
+                          max="2100-12-31"
                           aria-label={`Next due date for ${item.title}`}
+                          aria-invalid={!!dateErrors[item.id]}
                           value={item.next_due_date}
                           onChange={(e) => changeDueDate(item, e.target.value)}
-                          className="h-8 text-xs w-[9.5rem]"
+                          className={cn(
+                            "h-8 text-xs w-[9.5rem]",
+                            dateErrors[item.id] && "border-destructive"
+                          )}
                         />
                         <div className="flex items-center gap-1.5 ml-auto">
                           <Switch
@@ -195,6 +208,10 @@ export function RecurringManager() {
                           </Button>
                         </div>
                       </div>
+
+                      {dateErrors[item.id] && (
+                        <p className="text-xs text-destructive">{dateErrors[item.id]}</p>
+                      )}
                     </motion.div>
                   );
                 })}

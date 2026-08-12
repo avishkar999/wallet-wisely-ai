@@ -12,6 +12,8 @@ import {
 } from "@/hooks/useRecurringTransactions";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { validateRecurring, MAX_REMINDER_DAYS, type FieldErrors } from "@/lib/validation/recurring";
+import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
   { value: "bills", label: "Bills & Utilities" },
@@ -28,6 +30,12 @@ const CATEGORIES = [
 ];
 
 const FREQUENCIES = ["daily", "weekly", "monthly", "yearly"];
+const REMINDER_OPTIONS = ["0", "1", "2", "3", "5", "7"];
+
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
+  return <p className="text-xs text-destructive">{message}</p>;
+}
 
 interface EditRecurringDialogProps {
   item: RecurringTransaction | null;
@@ -47,6 +55,7 @@ export function EditRecurringDialog({ item, open, onOpenChange }: EditRecurringD
   const [reminderDays, setReminderDays] = useState("3");
   const [isActive, setIsActive] = useState(true);
   const [notes, setNotes] = useState("");
+  const [errors, setErrors] = useState<FieldErrors>({});
 
   useEffect(() => {
     if (!item) return;
@@ -59,34 +68,64 @@ export function EditRecurringDialog({ item, open, onOpenChange }: EditRecurringD
     setReminderDays(String(item.reminder_days_before ?? 3));
     setIsActive(item.is_active ?? true);
     setNotes(item.notes ?? "");
+    setErrors({});
   }, [item]);
+
+  const clearError = (key: keyof FieldErrors) =>
+    setErrors((prev) => (prev[key] ? { ...prev, [key]: undefined } : prev));
+
+  const handleTypeChange = (value: string) => {
+    setType(value);
+    if (value === "income") setCategory("income");
+    else if (category === "income") setCategory("bills");
+    setErrors((prev) => ({ ...prev, type: undefined, category: undefined }));
+  };
+
+  const handleFrequencyChange = (value: string) => {
+    setFrequency(value);
+    const max = MAX_REMINDER_DAYS[value] ?? 30;
+    if (parseInt(reminderDays, 10) > max) setReminderDays(String(max));
+    setErrors((prev) => ({ ...prev, frequency: undefined, reminder_days_before: undefined }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!item) return;
 
-    const parsedAmount = parseFloat(amount);
-    if (!title.trim() || !Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      toast.error("Enter a valid title and amount");
+    const result = validateRecurring({
+      title,
+      amount: amount.trim() === "" ? NaN : Number(amount),
+      type,
+      category,
+      frequency,
+      next_due_date: nextDueDate,
+      reminder_days_before: parseInt(reminderDays, 10),
+      is_active: isActive,
+      notes: notes.trim() || null,
+    });
+
+    if (!result.ok) {
+      const fieldErrors: FieldErrors = (result as { errors: FieldErrors }).errors;
+      setErrors(fieldErrors);
+      const first = Object.values(fieldErrors).find((m): m is string => !!m);
+      toast.error(first ?? "Please fix the highlighted fields");
       return;
     }
-    if (!nextDueDate) {
-      toast.error("Pick a next due date");
-      return;
-    }
+
+    setErrors({});
 
     try {
       await updateRecurring.mutateAsync({
         id: item.id,
-        title: title.trim(),
-        amount: parsedAmount,
-        type,
-        category: category as RecurringTransaction["category"],
-        frequency,
-        next_due_date: nextDueDate,
-        reminder_days_before: parseInt(reminderDays, 10),
+        title: result.data.title,
+        amount: result.data.amount,
+        type: result.data.type,
+        category: result.data.category,
+        frequency: result.data.frequency,
+        next_due_date: result.data.next_due_date,
+        reminder_days_before: result.data.reminder_days_before,
         is_active: isActive,
-        notes: notes.trim() || null,
+        notes: result.data.notes ?? null,
       });
       toast.success("Schedule updated");
       onOpenChange(false);
@@ -94,6 +133,8 @@ export function EditRecurringDialog({ item, open, onOpenChange }: EditRecurringD
       toast.error("Failed to update schedule");
     }
   };
+
+  const maxReminder = MAX_REMINDER_DAYS[frequency] ?? 30;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -105,10 +146,21 @@ export function EditRecurringDialog({ item, open, onOpenChange }: EditRecurringD
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div className="space-y-2">
             <Label htmlFor="edit-title">Title</Label>
-            <Input id="edit-title" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <Input
+              id="edit-title"
+              value={title}
+              maxLength={100}
+              aria-invalid={!!errors.title}
+              className={cn(errors.title && "border-destructive")}
+              onChange={(e) => {
+                setTitle(e.target.value);
+                clearError("title");
+              }}
+            />
+            <FieldError message={errors.title} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -117,37 +169,57 @@ export function EditRecurringDialog({ item, open, onOpenChange }: EditRecurringD
               <Input
                 id="edit-amount"
                 type="number"
+                min="0.01"
+                step="0.01"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                aria-invalid={!!errors.amount}
+                className={cn(errors.amount && "border-destructive")}
+                onChange={(e) => {
+                  setAmount(e.target.value);
+                  clearError("amount");
+                }}
               />
+              <FieldError message={errors.amount} />
             </div>
             <div className="space-y-2">
               <Label>Type</Label>
-              <Select value={type} onValueChange={setType}>
+              <Select value={type} onValueChange={handleTypeChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="expense">Expense</SelectItem>
                   <SelectItem value="income">Income</SelectItem>
                 </SelectContent>
               </Select>
+              <FieldError message={errors.type} />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={category}
+                onValueChange={(v) => {
+                  setCategory(v);
+                  clearError("category");
+                }}
+              >
+                <SelectTrigger className={cn(errors.category && "border-destructive")}>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((c) => (
+                  {CATEGORIES.filter((c) =>
+                    type === "income" ? c.value === "income" : c.value !== "income"
+                  ).map((c) => (
                     <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <FieldError message={errors.category} />
             </div>
             <div className="space-y-2">
               <Label>Frequency</Label>
-              <Select value={frequency} onValueChange={setFrequency}>
+              <Select value={frequency} onValueChange={handleFrequencyChange}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {FREQUENCIES.map((f) => (
@@ -155,6 +227,7 @@ export function EditRecurringDialog({ item, open, onOpenChange }: EditRecurringD
                   ))}
                 </SelectContent>
               </Select>
+              <FieldError message={errors.frequency} />
             </div>
           </div>
 
@@ -164,20 +237,39 @@ export function EditRecurringDialog({ item, open, onOpenChange }: EditRecurringD
               <Input
                 id="edit-due"
                 type="date"
+                min="2000-01-01"
+                max="2100-12-31"
                 value={nextDueDate}
-                onChange={(e) => setNextDueDate(e.target.value)}
+                aria-invalid={!!errors.next_due_date}
+                className={cn(errors.next_due_date && "border-destructive")}
+                onChange={(e) => {
+                  setNextDueDate(e.target.value);
+                  clearError("next_due_date");
+                }}
               />
+              <FieldError message={errors.next_due_date} />
             </div>
             <div className="space-y-2">
               <Label>Remind Before (days)</Label>
-              <Select value={reminderDays} onValueChange={setReminderDays}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={reminderDays}
+                onValueChange={(v) => {
+                  setReminderDays(v);
+                  clearError("reminder_days_before");
+                }}
+              >
+                <SelectTrigger className={cn(errors.reminder_days_before && "border-destructive")}>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {["0", "1", "2", "3", "5", "7"].map((d) => (
-                    <SelectItem key={d} value={d}>{d} days</SelectItem>
+                  {REMINDER_OPTIONS.filter((d) => parseInt(d, 10) <= maxReminder).map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d === "0" ? "On the day" : `${d} day${d === "1" ? "" : "s"}`}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <FieldError message={errors.reminder_days_before} />
             </div>
           </div>
 
@@ -196,9 +288,14 @@ export function EditRecurringDialog({ item, open, onOpenChange }: EditRecurringD
             <Textarea
               id="edit-notes"
               value={notes}
-              onChange={(e) => setNotes(e.target.value)}
+              maxLength={500}
+              onChange={(e) => {
+                setNotes(e.target.value);
+                clearError("notes");
+              }}
               rows={2}
             />
+            <FieldError message={errors.notes} />
           </div>
 
           <DialogFooter>
