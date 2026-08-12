@@ -170,10 +170,16 @@ export function RecurringManager() {
                       <div className="flex items-center gap-2 flex-wrap">
                         <Input
                           type="date"
+                          min="2000-01-01"
+                          max="2100-12-31"
                           aria-label={`Next due date for ${item.title}`}
+                          aria-invalid={!!dateErrors[item.id]}
                           value={item.next_due_date}
                           onChange={(e) => changeDueDate(item, e.target.value)}
-                          className="h-8 text-xs w-[9.5rem]"
+                          className={cn(
+                            "h-8 text-xs w-[9.5rem]",
+                            dateErrors[item.id] && "border-destructive"
+                          )}
                         />
                         <div className="flex items-center gap-1.5 ml-auto">
                           <Switch
