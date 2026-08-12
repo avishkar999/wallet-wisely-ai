@@ -51,6 +51,7 @@ export function RecurringManager() {
 
   const [editItem, setEditItem] = useState<RecurringTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [dateErrors, setDateErrors] = useState<Record<string, string | undefined>>({});
 
   const togglePause = async (item: RecurringTransaction) => {
     const next = !(item.is_active ?? true);
