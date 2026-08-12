@@ -88,8 +88,10 @@ export function AddRecurringDialog() {
     });
 
     if (!result.ok) {
-      setErrors(result.errors);
-      toast.error(Object.values(result.errors)[0] ?? "Please fix the highlighted fields");
+      const fieldErrors: FieldErrors = (result as { errors: FieldErrors }).errors;
+      setErrors(fieldErrors);
+      const first = Object.values(fieldErrors).find((m): m is string => !!m);
+      toast.error(first ?? "Please fix the highlighted fields");
       return;
     }
 
