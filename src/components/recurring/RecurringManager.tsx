@@ -17,6 +17,7 @@ import { format, differenceInDays, isBefore, isToday } from "date-fns";
 import { CalendarClock, Pencil, Trash2, Repeat } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { validateDueDate } from "@/lib/validation/recurring";
 import {
   AlertDialog,
   AlertDialogAction,
