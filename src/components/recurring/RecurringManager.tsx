@@ -208,6 +208,10 @@ export function RecurringManager() {
                           </Button>
                         </div>
                       </div>
+
+                      {dateErrors[item.id] && (
+                        <p className="text-xs text-destructive">{dateErrors[item.id]}</p>
+                      )}
                     </motion.div>
                   );
                 })}
