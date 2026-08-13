@@ -165,7 +165,48 @@ export function RecurringManager() {
                 <Badge variant="secondary">{schedules.length}</Badge>
               )}
             </CardTitle>
-            <AddRecurringDialog />
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-8">
+                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport("csv")}>
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("json")}>
+                    Export as JSON
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8"
+                disabled={importing}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="w-3.5 h-3.5 mr-1.5" />
+                {importing ? "Importing…" : "Import"}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.json,text/csv,application/json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) handleImportFile(file);
+                }}
+              />
+
+              <AddRecurringDialog />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
