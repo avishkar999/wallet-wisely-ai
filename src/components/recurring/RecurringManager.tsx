@@ -10,8 +10,12 @@ import {
   useRecurringTransactions,
   useUpdateRecurringTransaction,
   useDeleteRecurringTransaction,
-  useAddRecurringTransaction,
 } from "@/hooks/useRecurringTransactions";
+import {
+  ImportPreviewDialog,
+  buildImportPlan,
+  type ImportPlanRow,
+} from "./ImportPreviewDialog";
 import { AddRecurringDialog } from "@/components/calendar/AddRecurringDialog";
 import { EditRecurringDialog } from "./EditRecurringDialog";
 import { format, differenceInDays, isBefore, isToday } from "date-fns";
@@ -61,12 +65,16 @@ export function RecurringManager() {
   const { data: schedules = [], isLoading } = useRecurringTransactions();
   const updateRecurring = useUpdateRecurringTransaction();
   const deleteRecurring = useDeleteRecurringTransaction();
-  const addRecurring = useAddRecurringTransaction();
 
   const [editItem, setEditItem] = useState<RecurringTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dateErrors, setDateErrors] = useState<Record<string, string | undefined>>({});
   const [importing, setImporting] = useState(false);
+  const [preview, setPreview] = useState<{
+    plan: ImportPlanRow[];
+    skipped: string[];
+    fileName: string;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = (kind: "csv" | "json") => {
@@ -86,30 +94,16 @@ export function RecurringManager() {
       const text = await file.text();
       const { valid, errors } = parseRecurringFile(file.name, text);
 
-      if (valid.length === 0) {
-        toast.error(errors[0] ?? "No valid schedules found in this file");
+      if (valid.length === 0 && errors.length === 0) {
+        toast.error("No schedules found in this file");
         return;
       }
 
-      let imported = 0;
-      for (const item of valid) {
-        try {
-          await addRecurring.mutateAsync(item);
-          imported++;
-        } catch {
-          errors.push(`${item.title} — could not be saved`);
-        }
-      }
-
-      if (imported > 0) {
-        toast.success(
-          `Imported ${imported} schedule${imported > 1 ? "s" : ""}` +
-            (errors.length ? ` · ${errors.length} skipped` : "")
-        );
-      }
-      if (errors.length) {
-        toast.error(errors.slice(0, 3).join("\n"), { duration: 8000 });
-      }
+      setPreview({
+        plan: buildImportPlan(valid, schedules),
+        skipped: errors,
+        fileName: file.name,
+      });
     } catch {
       toast.error("Could not read that file");
     } finally {
@@ -330,6 +324,16 @@ export function RecurringManager() {
         open={!!editItem}
         onOpenChange={(open) => !open && setEditItem(null)}
       />
+
+      {preview && (
+        <ImportPreviewDialog
+          open={!!preview}
+          onOpenChange={(open) => !open && setPreview(null)}
+          plan={preview.plan}
+          skipped={preview.skipped}
+          fileName={preview.fileName}
+        />
+      )}
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
