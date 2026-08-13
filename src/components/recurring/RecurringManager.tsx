@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,23 @@ import {
   useRecurringTransactions,
   useUpdateRecurringTransaction,
   useDeleteRecurringTransaction,
+  useAddRecurringTransaction,
 } from "@/hooks/useRecurringTransactions";
 import { AddRecurringDialog } from "@/components/calendar/AddRecurringDialog";
 import { EditRecurringDialog } from "./EditRecurringDialog";
 import { format, differenceInDays, isBefore, isToday } from "date-fns";
-import { CalendarClock, Pencil, Trash2, Repeat } from "lucide-react";
+import { CalendarClock, Pencil, Trash2, Repeat, Download, Upload } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  exportRecurringToCSV,
+  exportRecurringToJSON,
+  parseRecurringFile,
+} from "@/utils/recurringBackup";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { validateDueDate } from "@/lib/validation/recurring";
@@ -49,10 +61,61 @@ export function RecurringManager() {
   const { data: schedules = [], isLoading } = useRecurringTransactions();
   const updateRecurring = useUpdateRecurringTransaction();
   const deleteRecurring = useDeleteRecurringTransaction();
+  const addRecurring = useAddRecurringTransaction();
 
   const [editItem, setEditItem] = useState<RecurringTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [dateErrors, setDateErrors] = useState<Record<string, string | undefined>>({});
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExport = (kind: "csv" | "json") => {
+    if (schedules.length === 0) {
+      toast.error("No schedules to export");
+      return;
+    }
+    const filename = `recurring-schedules-${format(new Date(), "yyyy-MM-dd")}`;
+    if (kind === "csv") exportRecurringToCSV(schedules, filename);
+    else exportRecurringToJSON(schedules, filename);
+    toast.success(`Exported ${schedules.length} schedule${schedules.length > 1 ? "s" : ""}`);
+  };
+
+  const handleImportFile = async (file: File) => {
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const { valid, errors } = parseRecurringFile(file.name, text);
+
+      if (valid.length === 0) {
+        toast.error(errors[0] ?? "No valid schedules found in this file");
+        return;
+      }
+
+      let imported = 0;
+      for (const item of valid) {
+        try {
+          await addRecurring.mutateAsync(item);
+          imported++;
+        } catch {
+          errors.push(`${item.title} — could not be saved`);
+        }
+      }
+
+      if (imported > 0) {
+        toast.success(
+          `Imported ${imported} schedule${imported > 1 ? "s" : ""}` +
+            (errors.length ? ` · ${errors.length} skipped` : "")
+        );
+      }
+      if (errors.length) {
+        toast.error(errors.slice(0, 3).join("\n"), { duration: 8000 });
+      }
+    } catch {
+      toast.error("Could not read that file");
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const togglePause = async (item: RecurringTransaction) => {
     const next = !(item.is_active ?? true);
@@ -102,7 +165,48 @@ export function RecurringManager() {
                 <Badge variant="secondary">{schedules.length}</Badge>
               )}
             </CardTitle>
-            <AddRecurringDialog />
+            <div className="flex items-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-8">
+                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport("csv")}>
+                    Export as CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("json")}>
+                    Export as JSON
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8"
+                disabled={importing}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="w-3.5 h-3.5 mr-1.5" />
+                {importing ? "Importing…" : "Import"}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,.json,text/csv,application/json"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) handleImportFile(file);
+                }}
+              />
+
+              <AddRecurringDialog />
+            </div>
           </div>
         </CardHeader>
         <CardContent>
