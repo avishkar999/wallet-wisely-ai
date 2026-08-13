@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,23 @@ import {
   useRecurringTransactions,
   useUpdateRecurringTransaction,
   useDeleteRecurringTransaction,
+  useAddRecurringTransaction,
 } from "@/hooks/useRecurringTransactions";
 import { AddRecurringDialog } from "@/components/calendar/AddRecurringDialog";
 import { EditRecurringDialog } from "./EditRecurringDialog";
 import { format, differenceInDays, isBefore, isToday } from "date-fns";
-import { CalendarClock, Pencil, Trash2, Repeat } from "lucide-react";
+import { CalendarClock, Pencil, Trash2, Repeat, Download, Upload } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  exportRecurringToCSV,
+  exportRecurringToJSON,
+  parseRecurringFile,
+} from "@/utils/recurringBackup";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { validateDueDate } from "@/lib/validation/recurring";
