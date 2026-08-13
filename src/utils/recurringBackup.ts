@@ -118,7 +118,7 @@ function normalize(raw: Record<string, unknown>, rowLabel: string, errors: strin
   };
 
   const result = validateRecurring(candidate);
-  if (!result.ok) {
+  if (result.ok === false) {
     const msg = Object.entries(result.errors)
       .map(([k, v]) => `${k}: ${v}`)
       .join("; ");
