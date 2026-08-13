@@ -325,6 +325,16 @@ export function RecurringManager() {
         onOpenChange={(open) => !open && setEditItem(null)}
       />
 
+      {preview && (
+        <ImportPreviewDialog
+          open={!!preview}
+          onOpenChange={(open) => !open && setPreview(null)}
+          plan={preview.plan}
+          skipped={preview.skipped}
+          fileName={preview.fileName}
+        />
+      )}
+
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
