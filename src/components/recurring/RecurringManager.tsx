@@ -30,7 +30,14 @@ import {
   exportRecurringToCSV,
   exportRecurringToJSON,
   parseRecurringFile,
+  parseCsvTable,
+  parseMappedCsv,
+  guessMapping,
+  mappingIsComplete,
+  type ColumnMapping,
+  type CsvTable,
 } from "@/utils/recurringBackup";
+import { ColumnMappingDialog } from "./ColumnMappingDialog";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { validateDueDate } from "@/lib/validation/recurring";
