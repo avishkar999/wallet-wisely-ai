@@ -46,9 +46,14 @@ export function ColumnMappingDialog({
   onConfirm,
 }: ColumnMappingDialogProps) {
   const [mapping, setMapping] = useState<ColumnMapping>({});
+  const [remember, setRemember] = useState(true);
+  const [usedSaved, setUsedSaved] = useState(false);
 
   useEffect(() => {
-    if (table) setMapping(guessMapping(table.headers));
+    if (!table) return;
+    const saved = loadSavedMapping(table.headers);
+    setUsedSaved(!!saved);
+    setMapping(saved ?? guessMapping(table.headers));
   }, [table]);
 
   const complete = useMemo(() => mappingIsComplete(mapping), [mapping]);
