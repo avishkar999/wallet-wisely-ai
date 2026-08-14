@@ -23,6 +23,9 @@ import {
   IMPORT_FIELDS,
   guessMapping,
   mappingIsComplete,
+  loadSavedMapping,
+  saveMapping,
+  forgetMapping,
 } from "@/utils/recurringBackup";
 
 const NONE = "__none__";
