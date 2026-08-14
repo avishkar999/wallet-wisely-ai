@@ -179,3 +179,86 @@ export function parseRecurringFile(filename: string, content: string): ParsedImp
 
   return { valid, errors };
 }
+
+/* ---------------- Column mapping support ---------------- */
+
+export const IMPORT_FIELDS = [
+  { key: "title", label: "Title", required: true },
+  { key: "amount", label: "Amount", required: true },
+  { key: "type", label: "Type (income/expense)", required: true },
+  { key: "category", label: "Category", required: true },
+  { key: "frequency", label: "Frequency", required: true },
+  { key: "next_due_date", label: "Next due date", required: true },
+  { key: "reminder_days_before", label: "Reminder days before", required: false },
+  { key: "is_active", label: "Active", required: false },
+  { key: "notes", label: "Notes", required: false },
+] as const;
+
+export type ImportField = (typeof IMPORT_FIELDS)[number]["key"];
+export type ColumnMapping = Partial<Record<ImportField, string>>;
+
+export type CsvTable = { headers: string[]; rows: string[][] };
+
+export function parseCsvTable(content: string): CsvTable | null {
+  const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return null;
+  const headers = splitCsvLine(lines[0]).map((h) => h.trim().replace(/^"|"$/g, ""));
+  const rows = lines.slice(1).map((l) => splitCsvLine(l).map((c) => c.trim()));
+  return { headers, rows };
+}
+
+const ALIASES: Record<ImportField, string[]> = {
+  title: ["title", "name", "description", "label", "item", "payee", "merchant"],
+  amount: ["amount", "value", "cost", "price", "sum", "total"],
+  type: ["type", "kind", "direction", "in/out", "flow"],
+  category: ["category", "cat", "group", "tag"],
+  frequency: ["frequency", "freq", "repeat", "interval", "recurrence", "cycle"],
+  next_due_date: ["next_due_date", "next due date", "due date", "duedate", "date", "next date", "start date"],
+  reminder_days_before: ["reminder_days_before", "reminder days before", "reminder", "remind before", "reminder days"],
+  is_active: ["is_active", "active", "enabled", "status"],
+  notes: ["notes", "note", "comment", "comments", "memo", "remarks"],
+};
+
+const norm = (s: string) => s.trim().toLowerCase().replace(/[_\-]+/g, " ").replace(/\s+/g, " ");
+
+export function guessMapping(headers: string[]): ColumnMapping {
+  const mapping: ColumnMapping = {};
+  const used = new Set<string>();
+  for (const field of IMPORT_FIELDS) {
+    const aliases = ALIASES[field.key].map(norm);
+    const exact = headers.find((h) => !used.has(h) && aliases.includes(norm(h)));
+    const partial =
+      exact ??
+      headers.find((h) => !used.has(h) && aliases.some((a) => norm(h).includes(a) || a.includes(norm(h))));
+    if (partial) {
+      mapping[field.key] = partial;
+      used.add(partial);
+    }
+  }
+  return mapping;
+}
+
+export function mappingIsComplete(mapping: ColumnMapping): boolean {
+  return IMPORT_FIELDS.filter((f) => f.required).every((f) => !!mapping[f.key]);
+}
+
+export function parseMappedCsv(table: CsvTable, mapping: ColumnMapping): ParsedImport {
+  const errors: string[] = [];
+  const valid: RecurringTransactionInsert[] = [];
+  const indexOf = (field: ImportField) => {
+    const header = mapping[field];
+    return header ? table.headers.indexOf(header) : -1;
+  };
+
+  table.rows.forEach((cells, idx) => {
+    const raw: Record<string, unknown> = {};
+    for (const field of IMPORT_FIELDS) {
+      const i = indexOf(field.key);
+      if (i >= 0) raw[field.key] = cells[i];
+    }
+    const item = normalize(raw, `Row ${idx + 2}`, errors);
+    if (item) valid.push(item);
+  });
+
+  return { valid, errors };
+}
