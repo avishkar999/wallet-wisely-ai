@@ -262,3 +262,53 @@ export function parseMappedCsv(table: CsvTable, mapping: ColumnMapping): ParsedI
 
   return { valid, errors };
 }
+
+/* ---------------- Remembered mappings ---------------- */
+
+const MAPPING_STORE_KEY = "walletwisely.recurring.columnMappings";
+
+export function mappingSignature(headers: string[]): string {
+  return headers.map((h) => norm(h)).join("|");
+}
+
+function readStore(): Record<string, ColumnMapping> {
+  try {
+    const raw = localStorage.getItem(MAPPING_STORE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, ColumnMapping>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function loadSavedMapping(headers: string[]): ColumnMapping | null {
+  const saved = readStore()[mappingSignature(headers)];
+  if (!saved) return null;
+  // Drop any columns that no longer exist in this file
+  const cleaned: ColumnMapping = {};
+  for (const field of IMPORT_FIELDS) {
+    const header = saved[field.key];
+    if (header && headers.includes(header)) cleaned[field.key] = header;
+  }
+  return mappingIsComplete(cleaned) ? cleaned : null;
+}
+
+export function saveMapping(headers: string[], mapping: ColumnMapping) {
+  try {
+    const store = readStore();
+    store[mappingSignature(headers)] = mapping;
+    localStorage.setItem(MAPPING_STORE_KEY, JSON.stringify(store));
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}
+
+export function forgetMapping(headers: string[]) {
+  try {
+    const store = readStore();
+    delete store[mappingSignature(headers)];
+    localStorage.setItem(MAPPING_STORE_KEY, JSON.stringify(store));
+  } catch {
+    /* ignore */
+  }
+}

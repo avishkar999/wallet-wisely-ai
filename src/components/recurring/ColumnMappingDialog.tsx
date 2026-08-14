@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -23,6 +24,9 @@ import {
   IMPORT_FIELDS,
   guessMapping,
   mappingIsComplete,
+  loadSavedMapping,
+  saveMapping,
+  forgetMapping,
 } from "@/utils/recurringBackup";
 
 const NONE = "__none__";
@@ -43,9 +47,14 @@ export function ColumnMappingDialog({
   onConfirm,
 }: ColumnMappingDialogProps) {
   const [mapping, setMapping] = useState<ColumnMapping>({});
+  const [remember, setRemember] = useState(true);
+  const [usedSaved, setUsedSaved] = useState(false);
 
   useEffect(() => {
-    if (table) setMapping(guessMapping(table.headers));
+    if (!table) return;
+    const saved = loadSavedMapping(table.headers);
+    setUsedSaved(!!saved);
+    setMapping(saved ?? guessMapping(table.headers));
   }, [table]);
 
   const complete = useMemo(() => mappingIsComplete(mapping), [mapping]);
@@ -119,11 +128,53 @@ export function ColumnMappingDialog({
           </p>
         )}
 
+        <div className="flex items-center justify-between gap-3 rounded-md border p-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="remember-mapping"
+                checked={remember}
+                onCheckedChange={(v) => setRemember(v === true)}
+              />
+              <label htmlFor="remember-mapping" className="text-sm font-medium">
+                Remember this mapping for files like this
+              </label>
+            </div>
+            {usedSaved && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Pre-filled from your saved mapping.
+              </p>
+            )}
+          </div>
+          {usedSaved && table && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                forgetMapping(table.headers);
+                setUsedSaved(false);
+                setMapping(guessMapping(table.headers));
+              }}
+            >
+              Reset
+            </Button>
+          )}
+        </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button disabled={!complete} onClick={() => onConfirm(mapping)}>
+          <Button
+            disabled={!complete}
+            onClick={() => {
+              if (table) {
+                if (remember) saveMapping(table.headers, mapping);
+                else forgetMapping(table.headers);
+              }
+              onConfirm(mapping);
+            }}
+          >
             Continue
           </Button>
         </DialogFooter>
