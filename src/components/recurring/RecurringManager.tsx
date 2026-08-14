@@ -82,6 +82,7 @@ export function RecurringManager() {
     skipped: string[];
     fileName: string;
   } | null>(null);
+  const [mapper, setMapper] = useState<{ table: CsvTable; fileName: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleExport = (kind: "csv" | "json") => {
@@ -95,27 +96,58 @@ export function RecurringManager() {
     toast.success(`Exported ${schedules.length} schedule${schedules.length > 1 ? "s" : ""}`);
   };
 
+  const showPreview = (
+    result: { valid: Parameters<typeof buildImportPlan>[0]; errors: string[] },
+    fileName: string
+  ) => {
+    if (result.valid.length === 0 && result.errors.length === 0) {
+      toast.error("No schedules found in this file");
+      return;
+    }
+    setPreview({
+      plan: buildImportPlan(result.valid, schedules),
+      skipped: result.errors,
+      fileName,
+    });
+  };
+
   const handleImportFile = async (file: File) => {
     setImporting(true);
     try {
       const text = await file.text();
-      const { valid, errors } = parseRecurringFile(file.name, text);
+      const isJson =
+        file.name.toLowerCase().endsWith(".json") ||
+        text.trim().startsWith("{") ||
+        text.trim().startsWith("[");
 
-      if (valid.length === 0 && errors.length === 0) {
-        toast.error("No schedules found in this file");
+      if (!isJson) {
+        const table = parseCsvTable(text);
+        if (!table) {
+          toast.error("CSV has no data rows");
+          return;
+        }
+        const guessed = guessMapping(table.headers);
+        if (!mappingIsComplete(guessed)) {
+          setMapper({ table, fileName: file.name });
+          return;
+        }
+        showPreview(parseMappedCsv(table, guessed), file.name);
         return;
       }
 
-      setPreview({
-        plan: buildImportPlan(valid, schedules),
-        skipped: errors,
-        fileName: file.name,
-      });
+      showPreview(parseRecurringFile(file.name, text), file.name);
     } catch {
       toast.error("Could not read that file");
     } finally {
       setImporting(false);
     }
+  };
+
+  const confirmMapping = (mapping: ColumnMapping) => {
+    if (!mapper) return;
+    const { table, fileName } = mapper;
+    setMapper(null);
+    showPreview(parseMappedCsv(table, mapping), fileName);
   };
 
   const togglePause = async (item: RecurringTransaction) => {
