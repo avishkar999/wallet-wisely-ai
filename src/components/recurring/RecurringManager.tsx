@@ -126,6 +126,12 @@ export function RecurringManager() {
           toast.error("CSV has no data rows");
           return;
         }
+        const saved = loadSavedMapping(table.headers);
+        if (saved) {
+          toast.info("Using your saved column mapping");
+          showPreview(parseMappedCsv(table, saved), file.name);
+          return;
+        }
         const guessed = guessMapping(table.headers);
         if (!mappingIsComplete(guessed)) {
           setMapper({ table, fileName: file.name });
