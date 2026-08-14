@@ -374,6 +374,14 @@ export function RecurringManager() {
         />
       )}
 
+      <ColumnMappingDialog
+        open={!!mapper}
+        onOpenChange={(open) => !open && setMapper(null)}
+        table={mapper?.table ?? null}
+        fileName={mapper?.fileName ?? ""}
+        onConfirm={confirmMapping}
+      />
+
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
