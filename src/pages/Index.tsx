@@ -30,6 +30,7 @@ import { useMonthlyArchive } from "@/hooks/useMonthlySummaries";
 import { MonthlyHistory } from "@/components/history/MonthlyHistory";
 import { MonthlySummaryCard } from "@/components/dashboard/MonthlySummaryCard";
 import { useAutoRecurring } from "@/hooks/useAutoRecurring";
+import { RecurringAudit } from "@/components/recurring/RecurringAudit";
 
 const Index = () => {
   // Perform monthly data reset when month changes
@@ -62,6 +63,9 @@ const Index = () => {
         return <TransactionsHistory />;
       case "monthly":
         return <MonthlyHistory />;
+      case "audit":
+        return <RecurringAudit />;
+
 
       case "analytics":
         return <SpendingAnalytics />;
