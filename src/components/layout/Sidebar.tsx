@@ -16,7 +16,8 @@ import {
   BarChart3,
   Goal,
   Building2,
-  Archive
+  Archive,
+  DatabaseZap
 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ const navItems = [
 
   { id: "analytics", label: "Analytics", icon: BarChart3 },
   { id: "calendar", label: "Calendar", icon: CalendarDays },
+  { id: "audit", label: "Recurring Audit", icon: DatabaseZap },
   { id: "expenses", label: "Expenses", icon: Wallet },
   { id: "rentals", label: "Rentals", icon: Building2 },
   { id: "investments", label: "Investments", icon: TrendingUp },
