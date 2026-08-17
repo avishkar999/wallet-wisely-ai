@@ -63,6 +63,9 @@ const Index = () => {
         return <TransactionsHistory />;
       case "monthly":
         return <MonthlyHistory />;
+      case "audit":
+        return <RecurringAudit />;
+
 
       case "analytics":
         return <SpendingAnalytics />;
