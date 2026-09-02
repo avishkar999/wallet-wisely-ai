@@ -120,6 +120,74 @@ export function useDeleteRecurringTransaction() {
   });
 }
 
+/** Marker written into the description of every auto-posted transaction. */
+export const AUTO_RECURRING_MARKER = "Auto-generated recurring";
+
+/**
+ * Delete a schedule together with every transaction it auto-generated
+ * (matched by title + auto-generated marker). Returns the number of
+ * transactions removed.
+ */
+export function useDeleteRecurringWithTransactions() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ id, title }: { id: string; title: string }) => {
+      if (!user) throw new Error("Not authenticated");
+
+      const { data: deletedTx, error: txError } = await supabase
+        .from("transactions")
+        .delete()
+        .eq("user_id", user.id)
+        .ilike("name", title)
+        .like("description", `${AUTO_RECURRING_MARKER}%`)
+        .select("id");
+      if (txError) throw txError;
+
+      const { error } = await supabase
+        .from("recurring_transactions")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
+      if (error) throw error;
+
+      return deletedTx?.length ?? 0;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["recurring_transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions-for-budget"] });
+    },
+  });
+}
+
+/** Delete a specific set of auto-generated transactions by id (e.g. orphans). */
+export function useDeleteGeneratedTransactions() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (!user) throw new Error("Not authenticated");
+      if (ids.length === 0) return 0;
+      const { data, error } = await supabase
+        .from("transactions")
+        .delete()
+        .eq("user_id", user.id)
+        .in("id", ids)
+        .like("description", `${AUTO_RECURRING_MARKER}%`)
+        .select("id");
+      if (error) throw error;
+      return data?.length ?? 0;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["transactions-for-budget"] });
+    },
+  });
+}
+
 // Helper to calculate next due date after marking as paid
 export function getNextDueDate(frequency: string, currentDate: Date): Date {
   switch (frequency) {
