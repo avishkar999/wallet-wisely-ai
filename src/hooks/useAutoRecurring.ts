@@ -1,12 +1,39 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { format, startOfDay, isAfter } from "date-fns";
 import { toast } from "sonner";
-import { getNextDueDate } from "@/hooks/useRecurringTransactions";
+import { getNextDueDate, AUTO_RECURRING_MARKER } from "@/hooks/useRecurringTransactions";
 
 const MAX_CATCHUP_OCCURRENCES = 60;
+
+/* ---------- Shared auto-post status (visible to any component) ---------- */
+
+export type AutoRecurringStatus = {
+  running: boolean;
+  lastRunAt: Date | null;
+  lastPosted: number;
+  error: string | null;
+};
+
+let status: AutoRecurringStatus = { running: false, lastRunAt: null, lastPosted: 0, error: null };
+const listeners = new Set<() => void>();
+
+function setStatus(patch: Partial<AutoRecurringStatus>) {
+  status = { ...status, ...patch };
+  listeners.forEach((l) => l());
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+/** Read the live status of the auto-posting engine. */
+export function useAutoRecurringStatus(): AutoRecurringStatus {
+  return useSyncExternalStore(subscribe, () => status, () => status);
+}
 
 /**
  * Automatically posts recurring income / expenses / bills / EMI / subscriptions
@@ -26,6 +53,7 @@ export function useAutoRecurring() {
     ranFor.current = runKey;
 
     const run = async () => {
+      setStatus({ running: true, error: null });
       const today = startOfDay(new Date());
 
       const { data: recurring, error } = await supabase
@@ -35,7 +63,14 @@ export function useAutoRecurring() {
         .eq("is_active", true)
         .lte("next_due_date", todayKey);
 
-      if (error || !recurring || recurring.length === 0) return;
+      if (error) {
+        setStatus({ running: false, lastRunAt: new Date(), error: error.message });
+        return;
+      }
+      if (!recurring || recurring.length === 0) {
+        setStatus({ running: false, lastRunAt: new Date(), lastPosted: 0 });
+        return;
+      }
 
       const rows: Record<string, unknown>[] = [];
       const updates: { id: string; next_due_date: string }[] = [];
@@ -53,7 +88,7 @@ export function useAutoRecurring() {
             category: item.category,
             payment_method: "auto_pay",
             transaction_date: format(due, "yyyy-MM-dd"),
-            description: `Auto-generated recurring (${item.frequency})`,
+            description: `${AUTO_RECURRING_MARKER} (${item.frequency})`,
           });
           due = startOfDay(getNextDueDate(item.frequency, due));
           count++;
@@ -64,11 +99,15 @@ export function useAutoRecurring() {
         }
       }
 
-      if (rows.length === 0) return;
+      if (rows.length === 0) {
+        setStatus({ running: false, lastRunAt: new Date(), lastPosted: 0 });
+        return;
+      }
 
       const { error: insertError } = await supabase.from("transactions").insert(rows as never);
       if (insertError) {
         console.error("Auto recurring insert failed:", insertError);
+        setStatus({ running: false, lastRunAt: new Date(), error: insertError.message });
         return;
       }
 
@@ -86,11 +125,15 @@ export function useAutoRecurring() {
       queryClient.invalidateQueries({ queryKey: ["transactions-for-budget"] });
       queryClient.invalidateQueries({ queryKey: ["recurring_transactions"] });
 
+      setStatus({ running: false, lastRunAt: new Date(), lastPosted: rows.length });
       toast.success(
         `${rows.length} recurring transaction${rows.length > 1 ? "s" : ""} auto-added`
       );
     };
 
-    run().catch((e) => console.error("Auto recurring failed:", e));
+    run().catch((e) => {
+      console.error("Auto recurring failed:", e);
+      setStatus({ running: false, lastRunAt: new Date(), error: String(e?.message ?? e) });
+    });
   }, [user?.id, queryClient]);
 }

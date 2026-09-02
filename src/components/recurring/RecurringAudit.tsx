@@ -9,25 +9,55 @@ import {
   Receipt,
   ShieldCheck,
   Code2,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRecurringTransactions } from "@/hooks/useRecurringTransactions";
+import {
+  useRecurringTransactions,
+  useDeleteRecurringTransaction,
+  useDeleteRecurringWithTransactions,
+  useDeleteGeneratedTransactions,
+  AUTO_RECURRING_MARKER,
+  type RecurringTransaction,
+} from "@/hooks/useRecurringTransactions";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useAutoRecurringStatus } from "@/hooks/useAutoRecurring";
+import { AutoPostStatus } from "./AutoPostStatus";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const currency = (n: number) =>
   `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
-const AUTO_MARKER = "Auto-generated recurring";
+const AUTO_MARKER = AUTO_RECURRING_MARKER;
 
 export function RecurringAudit() {
   const { data: recurring = [], isLoading: loadingRecurring } = useRecurringTransactions();
   const { data: transactions = [], isLoading: loadingTx } = useTransactions();
+  const deleteSchedule = useDeleteRecurringTransaction();
+  const deleteWithTx = useDeleteRecurringWithTransactions();
+  const deleteGenerated = useDeleteGeneratedTransactions();
+  const { running: autoPosting } = useAutoRecurringStatus();
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    schedule: RecurringTransaction;
+    count: number;
+  } | null>(null);
+  const [confirmOrphans, setConfirmOrphans] = useState(false);
 
   const generated = useMemo(
     () => transactions.filter((t) => (t.description || "").startsWith(AUTO_MARKER)),
@@ -53,6 +83,43 @@ export function RecurringAudit() {
   }, [generated, recurring]);
 
   const loading = loadingRecurring || loadingTx;
+  const deleting = deleteSchedule.isPending || deleteWithTx.isPending || deleteGenerated.isPending;
+
+  const handleDeleteOnly = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteSchedule.mutateAsync(deleteTarget.schedule.id);
+      toast.success("Schedule deleted — its transactions were kept");
+      setDeleteTarget(null);
+    } catch {
+      toast.error("Failed to delete schedule");
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!deleteTarget) return;
+    try {
+      const removed = await deleteWithTx.mutateAsync({
+        id: deleteTarget.schedule.id,
+        title: deleteTarget.schedule.title,
+      });
+      toast.success(`Schedule and ${removed} transaction${removed === 1 ? "" : "s"} deleted`);
+      setDeleteTarget(null);
+      if (expanded === deleteTarget.schedule.id) setExpanded(null);
+    } catch {
+      toast.error("Failed to delete schedule and transactions");
+    }
+  };
+
+  const handleClearOrphans = async () => {
+    try {
+      const removed = await deleteGenerated.mutateAsync(orphans.map((t) => t.id));
+      toast.success(`Removed ${removed} unlinked transaction${removed === 1 ? "" : "s"}`);
+      setConfirmOrphans(false);
+    } catch {
+      toast.error("Failed to remove unlinked transactions");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -81,13 +148,15 @@ export function RecurringAudit() {
         />
       </div>
 
+      <AutoPostStatus />
+
       <div className="rounded-2xl border border-border bg-card/60 backdrop-blur p-4 flex items-start gap-3">
         <Database className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
         <p className="text-sm text-muted-foreground">
           Schedules never store money themselves. When a due date arrives the app inserts a row into{" "}
           <code className="text-foreground">transactions</code> dated on that day and rolls{" "}
-          <code className="text-foreground">next_due_date</code> forward. Deleting a schedule leaves
-          the transactions it already created intact.
+          <code className="text-foreground">next_due_date</code> forward. When deleting a schedule you
+          can choose to keep or remove the transactions it already created.
         </p>
       </div>
 
@@ -143,18 +212,31 @@ export function RecurringAudit() {
                       className="border-t border-border"
                     >
                       <div className="p-4 space-y-3">
-                        <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
                           <p className="text-xs uppercase tracking-wide text-muted-foreground">
                             Rows in <code>transactions</code>
                           </p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowRaw(showRaw === schedule.id ? null : schedule.id)}
-                          >
-                            <Code2 className="w-4 h-4 mr-2" />
-                            {showRaw === schedule.id ? "Hide" : "Show"} stored record
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setShowRaw(showRaw === schedule.id ? null : schedule.id)}
+                            >
+                              <Code2 className="w-4 h-4 mr-2" />
+                              {showRaw === schedule.id ? "Hide" : "Show"} stored record
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteTarget({ schedule, count: linked.length })}
+                              disabled={autoPosting || deleting}
+                              title={autoPosting ? "Wait for auto-posting to finish" : undefined}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </Button>
+                          </div>
                         </div>
 
                         {showRaw === schedule.id && (
@@ -210,10 +292,20 @@ export function RecurringAudit() {
 
       {orphans.length > 0 && (
         <div className="rounded-2xl border border-border bg-card/60 backdrop-blur p-4">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <Table2 className="w-4 h-4 text-warning" />
             <p className="font-medium text-foreground">Unlinked generated transactions</p>
             <Badge variant="outline">{orphans.length}</Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto h-8 text-destructive hover:text-destructive"
+              onClick={() => setConfirmOrphans(true)}
+              disabled={autoPosting || deleting}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+              Clear all
+            </Button>
           </div>
           <p className="text-sm text-muted-foreground mb-3">
             These were created by a recurring schedule that has since been renamed or deleted.
@@ -230,6 +322,67 @@ export function RecurringAudit() {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && !deleting && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{deleteTarget?.schedule.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This schedule has generated{" "}
+              <strong className="text-foreground">{deleteTarget?.count ?? 0}</strong> transaction
+              {deleteTarget?.count === 1 ? "" : "s"}. You can remove just the schedule (keeping the
+              history) or remove everything it created.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <Button variant="outline" onClick={handleDeleteOnly} disabled={deleting || autoPosting}>
+              Schedule only
+            </Button>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteAll();
+              }}
+              disabled={deleting || autoPosting || !deleteTarget?.count}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : `Schedule + ${deleteTarget?.count ?? 0} transactions`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={confirmOrphans}
+        onOpenChange={(open) => !open && !deleting && setConfirmOrphans(false)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {orphans.length} unlinked transactions?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Only auto-generated transactions that no longer match any schedule will be removed.
+              Manually entered transactions are never touched. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleClearOrphans();
+              }}
+              disabled={deleting || autoPosting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleting ? "Removing…" : "Remove all"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
