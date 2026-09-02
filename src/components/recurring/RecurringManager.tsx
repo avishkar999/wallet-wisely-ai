@@ -281,6 +281,7 @@ export function RecurringManager() {
           </div>
         </CardHeader>
         <CardContent>
+          <AutoPostStatus className="mb-3" />
           {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -378,6 +379,8 @@ export function RecurringManager() {
                             variant="ghost"
                             className="h-8 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={() => setDeleteId(item.id)}
+                            disabled={autoPosting}
+                            title={autoPosting ? "Wait for auto-posting to finish" : "Delete schedule"}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -420,19 +423,39 @@ export function RecurringManager() {
         onConfirm={confirmMapping}
       />
 
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && !deleting && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this schedule?</AlertDialogTitle>
+            <AlertDialogTitle>Delete "{deleteTarget?.title}"?</AlertDialogTitle>
             <AlertDialogDescription>
-              Future transactions will no longer be posted automatically. Already recorded
-              transactions are kept.
+              Future occurrences will no longer be posted automatically. This schedule has
+              generated <strong className="text-foreground">{generatedCount}</strong> transaction
+              {generatedCount === 1 ? "" : "s"} so far — choose whether to keep or remove them too.
+              {autoPosting && (
+                <span className="block mt-2 text-primary">
+                  Auto-posting is still running; please wait for it to finish.
+                </span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-              Delete
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={handleDelete}
+              disabled={deleting || autoPosting}
+            >
+              Delete schedule only
+            </Button>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteWithTransactions();
+              }}
+              disabled={deleting || autoPosting || generatedCount === 0}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {deleting ? "Deleting…" : `Delete + ${generatedCount} transaction${generatedCount === 1 ? "" : "s"}`}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
