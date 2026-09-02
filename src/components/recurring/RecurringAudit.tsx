@@ -9,25 +9,55 @@ import {
   Receipt,
   ShieldCheck,
   Code2,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useRecurringTransactions } from "@/hooks/useRecurringTransactions";
+import {
+  useRecurringTransactions,
+  useDeleteRecurringTransaction,
+  useDeleteRecurringWithTransactions,
+  useDeleteGeneratedTransactions,
+  AUTO_RECURRING_MARKER,
+  type RecurringTransaction,
+} from "@/hooks/useRecurringTransactions";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useAutoRecurringStatus } from "@/hooks/useAutoRecurring";
+import { AutoPostStatus } from "./AutoPostStatus";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const currency = (n: number) =>
   `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 
-const AUTO_MARKER = "Auto-generated recurring";
+const AUTO_MARKER = AUTO_RECURRING_MARKER;
 
 export function RecurringAudit() {
   const { data: recurring = [], isLoading: loadingRecurring } = useRecurringTransactions();
   const { data: transactions = [], isLoading: loadingTx } = useTransactions();
+  const deleteSchedule = useDeleteRecurringTransaction();
+  const deleteWithTx = useDeleteRecurringWithTransactions();
+  const deleteGenerated = useDeleteGeneratedTransactions();
+  const { running: autoPosting } = useAutoRecurringStatus();
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    schedule: RecurringTransaction;
+    count: number;
+  } | null>(null);
+  const [confirmOrphans, setConfirmOrphans] = useState(false);
 
   const generated = useMemo(
     () => transactions.filter((t) => (t.description || "").startsWith(AUTO_MARKER)),
@@ -53,6 +83,43 @@ export function RecurringAudit() {
   }, [generated, recurring]);
 
   const loading = loadingRecurring || loadingTx;
+  const deleting = deleteSchedule.isPending || deleteWithTx.isPending || deleteGenerated.isPending;
+
+  const handleDeleteOnly = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteSchedule.mutateAsync(deleteTarget.schedule.id);
+      toast.success("Schedule deleted — its transactions were kept");
+      setDeleteTarget(null);
+    } catch {
+      toast.error("Failed to delete schedule");
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    if (!deleteTarget) return;
+    try {
+      const removed = await deleteWithTx.mutateAsync({
+        id: deleteTarget.schedule.id,
+        title: deleteTarget.schedule.title,
+      });
+      toast.success(`Schedule and ${removed} transaction${removed === 1 ? "" : "s"} deleted`);
+      setDeleteTarget(null);
+      if (expanded === deleteTarget.schedule.id) setExpanded(null);
+    } catch {
+      toast.error("Failed to delete schedule and transactions");
+    }
+  };
+
+  const handleClearOrphans = async () => {
+    try {
+      const removed = await deleteGenerated.mutateAsync(orphans.map((t) => t.id));
+      toast.success(`Removed ${removed} unlinked transaction${removed === 1 ? "" : "s"}`);
+      setConfirmOrphans(false);
+    } catch {
+      toast.error("Failed to remove unlinked transactions");
+    }
+  };
 
   return (
     <div className="space-y-6">
