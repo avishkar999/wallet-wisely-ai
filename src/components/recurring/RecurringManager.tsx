@@ -10,7 +10,12 @@ import {
   useRecurringTransactions,
   useUpdateRecurringTransaction,
   useDeleteRecurringTransaction,
+  useDeleteRecurringWithTransactions,
+  AUTO_RECURRING_MARKER,
 } from "@/hooks/useRecurringTransactions";
+import { useTransactions } from "@/hooks/useTransactions";
+import { useAutoRecurringStatus } from "@/hooks/useAutoRecurring";
+import { AutoPostStatus } from "./AutoPostStatus";
 import {
   ImportPreviewDialog,
   buildImportPlan,
@@ -71,11 +76,22 @@ function dueBadge(nextDueDate: string, isActive: boolean) {
 
 export function RecurringManager() {
   const { data: schedules = [], isLoading } = useRecurringTransactions();
+  const { data: transactions = [] } = useTransactions();
   const updateRecurring = useUpdateRecurringTransaction();
   const deleteRecurring = useDeleteRecurringTransaction();
+  const deleteWithTx = useDeleteRecurringWithTransactions();
+  const { running: autoPosting } = useAutoRecurringStatus();
 
   const [editItem, setEditItem] = useState<RecurringTransaction | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const deleteTarget = schedules.find((s) => s.id === deleteId) ?? null;
+  const generatedCount = deleteTarget
+    ? transactions.filter(
+        (t) =>
+          t.name.toLowerCase() === deleteTarget.title.toLowerCase() &&
+          (t.description || "").startsWith(AUTO_RECURRING_MARKER)
+      ).length
+    : 0;
   const [dateErrors, setDateErrors] = useState<Record<string, string | undefined>>({});
   const [importing, setImporting] = useState(false);
   const [preview, setPreview] = useState<{
@@ -192,6 +208,21 @@ export function RecurringManager() {
       toast.error("Failed to delete schedule");
     }
   };
+
+  const handleDeleteWithTransactions = async () => {
+    if (!deleteTarget) return;
+    try {
+      const removed = await deleteWithTx.mutateAsync({ id: deleteTarget.id, title: deleteTarget.title });
+      toast.success(
+        `Schedule deleted with ${removed} generated transaction${removed === 1 ? "" : "s"}`
+      );
+      setDeleteId(null);
+    } catch {
+      toast.error("Failed to delete schedule and transactions");
+    }
+  };
+
+  const deleting = deleteRecurring.isPending || deleteWithTx.isPending;
 
   return (
     <>
