@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      accounts: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          institution: string | null
+          is_active: boolean
+          name: string
+          notes: string | null
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          institution?: string | null
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          type?: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          institution?: string | null
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          type?: Database["public"]["Enums"]["account_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       budget_alert_settings: {
         Row: {
           alert_email: string | null
@@ -759,6 +798,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          created_at: string
+          csv_column_mappings: Json
+          id: string
+          last_monthly_reset: string | null
+          monthly_budget_goal: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          csv_column_mappings?: Json
+          id?: string
+          last_monthly_reset?: string | null
+          monthly_budget_goal?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          csv_column_mappings?: Json
+          id?: string
+          last_monthly_reset?: string | null
+          monthly_budget_goal?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -767,6 +836,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      account_type: "cash" | "bank" | "upi" | "credit_card" | "digital_wallet"
       debt_type:
         | "credit_card"
         | "personal_loan"
@@ -933,6 +1003,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type: ["cash", "bank", "upi", "credit_card", "digital_wallet"],
       debt_type: [
         "credit_card",
         "personal_loan",
