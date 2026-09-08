@@ -1,9 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format, startOfMonth } from "date-fns";
-
-const LAST_RESET_KEY = "walletwise_last_monthly_reset";
 
 /**
  * Hook to handle monthly data resets.
@@ -11,47 +9,56 @@ const LAST_RESET_KEY = "walletwise_last_monthly_reset";
  * - Portfolio alert cooldowns (last_alert_sent_at)
  * - Budget alert cooldowns (last_alert_sent_at)
  * - Subscription reminder cooldowns (reminder_sent_at)
+ *
+ * The "last reset" marker is stored on the user's account so the reset
+ * happens once per month across every device.
  */
 export function useMonthlyReset() {
   const { user } = useAuth();
+  const ran = useRef(false);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id || ran.current) return;
+    ran.current = true;
 
     const performMonthlyReset = async () => {
       const currentMonth = format(startOfMonth(new Date()), "yyyy-MM");
-      const lastReset = localStorage.getItem(LAST_RESET_KEY);
 
-      // Skip if already reset this month
-      if (lastReset === currentMonth) {
-        return;
-      }
+      const { data: settings } = await supabase
+        .from("user_settings")
+        .select("id,last_monthly_reset")
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      console.log("Performing monthly data reset for:", currentMonth);
+      if (settings?.last_monthly_reset === currentMonth) return;
 
       try {
-        // Reset portfolio alert cooldown
         await supabase
           .from("portfolio_alert_settings")
           .update({ last_alert_sent_at: null })
           .eq("user_id", user.id);
 
-        // Reset budget alert cooldown
         await supabase
           .from("budget_alert_settings")
           .update({ last_alert_sent_at: null })
           .eq("user_id", user.id);
 
-        // Reset subscription reminder cooldowns for the new month
         await supabase
           .from("subscription_decisions")
           .update({ reminder_sent_at: null })
           .eq("user_id", user.id)
           .eq("status", "to_review");
 
-        // Mark reset as complete for this month
-        localStorage.setItem(LAST_RESET_KEY, currentMonth);
-        console.log("Monthly reset completed successfully");
+        if (settings) {
+          await supabase
+            .from("user_settings")
+            .update({ last_monthly_reset: currentMonth })
+            .eq("user_id", user.id);
+        } else {
+          await supabase
+            .from("user_settings")
+            .insert({ user_id: user.id, last_monthly_reset: currentMonth } as never);
+        }
       } catch (error) {
         console.error("Error during monthly reset:", error);
       }
@@ -73,9 +80,9 @@ export function getCurrentMonthKey(): string {
  */
 export function isNewMonth(lastActivityDate: string | null): boolean {
   if (!lastActivityDate) return true;
-  
+
   const lastMonth = format(new Date(lastActivityDate), "yyyy-MM");
   const currentMonth = format(new Date(), "yyyy-MM");
-  
+
   return lastMonth !== currentMonth;
 }
