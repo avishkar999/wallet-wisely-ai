@@ -271,6 +271,16 @@ export function mappingSignature(headers: string[]): string {
   return headers.map((h) => norm(h)).join("|");
 }
 
+const mappingListeners = new Set<() => void>();
+
+/** Subscribe to local mapping changes (used to sync them to the account). */
+export function subscribeMappings(listener: () => void) {
+  mappingListeners.add(listener);
+  return () => {
+    mappingListeners.delete(listener);
+  };
+}
+
 function readStore(): Record<string, ColumnMapping> {
   try {
     const raw = localStorage.getItem(MAPPING_STORE_KEY);
@@ -279,6 +289,24 @@ function readStore(): Record<string, ColumnMapping> {
   } catch {
     return {};
   }
+}
+
+function writeStore(store: Record<string, ColumnMapping>) {
+  try {
+    localStorage.setItem(MAPPING_STORE_KEY, JSON.stringify(store));
+  } catch {
+    /* storage unavailable — ignore */
+  }
+}
+
+/** Read every remembered mapping (local cache of the account copy). */
+export function getMappingStore(): Record<string, ColumnMapping> {
+  return readStore();
+}
+
+/** Replace the local cache, e.g. after loading mappings from the account. */
+export function replaceMappingStore(store: Record<string, ColumnMapping>) {
+  writeStore(store);
 }
 
 export function loadSavedMapping(headers: string[]): ColumnMapping | null {
@@ -294,21 +322,16 @@ export function loadSavedMapping(headers: string[]): ColumnMapping | null {
 }
 
 export function saveMapping(headers: string[], mapping: ColumnMapping) {
-  try {
-    const store = readStore();
-    store[mappingSignature(headers)] = mapping;
-    localStorage.setItem(MAPPING_STORE_KEY, JSON.stringify(store));
-  } catch {
-    /* storage unavailable — ignore */
-  }
+  const store = readStore();
+  store[mappingSignature(headers)] = mapping;
+  writeStore(store);
+  mappingListeners.forEach((l) => l());
 }
 
 export function forgetMapping(headers: string[]) {
-  try {
-    const store = readStore();
-    delete store[mappingSignature(headers)];
-    localStorage.setItem(MAPPING_STORE_KEY, JSON.stringify(store));
-  } catch {
-    /* ignore */
-  }
+  const store = readStore();
+  delete store[mappingSignature(headers)];
+  writeStore(store);
+  mappingListeners.forEach((l) => l());
 }
+
