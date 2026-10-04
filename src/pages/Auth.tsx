@@ -211,6 +211,27 @@ export default function Auth() {
               {isLogin ? "Create a new account" : "Already have an account? Sign in"}
             </Button>
 
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full border border-primary/20 hover:bg-primary/10 text-primary"
+              disabled={loading}
+              onClick={async () => {
+                setLoading(true);
+                const { error } = await signIn("demo@walletwisely.app", "demo123");
+                if (!error) {
+                  toast({
+                    title: "Welcome to Wallet Wisely!",
+                    description: "Signed in as Demo User.",
+                  });
+                  navigate(redirectTo);
+                }
+                setLoading(false);
+              }}
+            >
+              Explore with Demo Account
+            </Button>
+
             <p className="text-xs text-center text-muted-foreground">
               AI Finance App — Version 2.0 (Functional Upgrade)
             </p>
