@@ -108,10 +108,19 @@ function getInitialData(table: string, userId: string): any[] {
         { id: "b6", user_id: userId, category: "health", budgeted_amount: 150, month: `${currentMonth}-01`, created_at: nowIso, updated_at: nowIso },
       ];
 
-    case "transactions":
-      return [
-        {
-          id: "t1",
+    case "transactions": {
+      const generatedTx: any[] = [];
+      let txIdCounter = 1;
+
+      for (let offset = 5; offset >= 0; offset--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - offset, 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const monthPrefix = `${y}-${m}`;
+
+        // Monthly salary
+        generatedTx.push({
+          id: `t-${txIdCounter++}`,
           user_id: userId,
           name: "Monthly Salary Deposit",
           description: "Primary Employer Salary",
@@ -119,115 +128,153 @@ function getInitialData(table: string, userId: string): any[] {
           type: "income",
           category: "income",
           payment_method: "neft",
-          transaction_date: `${currentMonth}-01`,
+          transaction_date: `${monthPrefix}-01`,
           created_at: nowIso,
           updated_at: nowIso,
-        },
-        {
-          id: "t2",
+        });
+
+        // Freelance or bonus some months
+        if (offset === 0 || offset === 2 || offset === 4) {
+          generatedTx.push({
+            id: `t-${txIdCounter++}`,
+            user_id: userId,
+            name: "Consulting Payout",
+            description: "Product advisory milestone",
+            amount: offset === 4 ? 1200 : offset === 2 ? 650 : 950,
+            type: "income",
+            category: "income",
+            payment_method: "upi",
+            transaction_date: `${monthPrefix}-12`,
+            created_at: nowIso,
+            updated_at: nowIso,
+          });
+        }
+
+        // Rent & Housing
+        generatedTx.push({
+          id: `t-${txIdCounter++}`,
           user_id: userId,
-          name: "Fresh Market Groceries",
-          description: "Weekly food essentials & fresh produce",
-          amount: 142.50,
+          name: "Apartment Rent & Society",
+          description: "Monthly lease payment",
+          amount: 1250,
           type: "expense",
-          category: "food",
-          payment_method: "debit_card",
-          transaction_date: `${currentMonth}-03`,
+          category: "bills",
+          payment_method: "neft",
+          transaction_date: `${monthPrefix}-02`,
           created_at: nowIso,
           updated_at: nowIso,
-        },
-        {
-          id: "t3",
+        });
+
+        // Electricity & utilities
+        generatedTx.push({
+          id: `t-${txIdCounter++}`,
           user_id: userId,
-          name: "Electric & Energy Utility",
-          description: "Monthly electricity invoice",
-          amount: 88.00,
+          name: "Electric & Water Utilities",
+          description: "Monthly utility invoices",
+          amount: 82 + ((offset * 14) % 30),
           type: "expense",
           category: "bills",
           payment_method: "auto_pay",
-          transaction_date: `${currentMonth}-04`,
+          transaction_date: `${monthPrefix}-04`,
           created_at: nowIso,
           updated_at: nowIso,
-        },
-        {
-          id: "t4",
+        });
+
+        // Groceries
+        generatedTx.push({
+          id: `t-${txIdCounter++}`,
           user_id: userId,
-          name: "City Commuter Rail Pass",
-          description: "Monthly public transit pass",
-          amount: 75.00,
+          name: "Fresh Market & Organic Groceries",
+          description: "Household supplies & vegetables",
+          amount: 180 + ((offset * 27) % 55),
+          type: "expense",
+          category: "food",
+          payment_method: "debit_card",
+          transaction_date: `${monthPrefix}-07`,
+          created_at: nowIso,
+          updated_at: nowIso,
+        });
+
+        // Dining & Coffee
+        generatedTx.push({
+          id: `t-${txIdCounter++}`,
+          user_id: userId,
+          name: "Artisan Cafe & Dining",
+          description: "Weekend meals with friends",
+          amount: 65 + ((offset * 18) % 40),
+          type: "expense",
+          category: "food",
+          payment_method: "upi",
+          transaction_date: `${monthPrefix}-11`,
+          created_at: nowIso,
+          updated_at: nowIso,
+        });
+
+        // Transport
+        generatedTx.push({
+          id: `t-${txIdCounter++}`,
+          user_id: userId,
+          name: "City Metro & Fuel",
+          description: "Commuter transport expenses",
+          amount: 70 + ((offset * 9) % 25),
           type: "expense",
           category: "transport",
           payment_method: "upi",
-          transaction_date: `${currentMonth}-05`,
+          transaction_date: `${monthPrefix}-15`,
           created_at: nowIso,
           updated_at: nowIso,
-        },
-        {
-          id: "t5",
+        });
+
+        // Streaming / Entertainment
+        generatedTx.push({
+          id: `t-${txIdCounter++}`,
           user_id: userId,
-          name: "Online Media Streaming",
-          description: "Entertainment subscription bundle",
+          name: "Digital Streaming & Cloud",
+          description: "Subscription entertainment bundle",
           amount: 28.99,
           type: "expense",
           category: "entertainment",
           payment_method: "credit_card",
-          transaction_date: `${currentMonth}-06`,
+          transaction_date: `${monthPrefix}-17`,
           created_at: nowIso,
           updated_at: nowIso,
-        },
-        {
-          id: "t6",
-          user_id: userId,
-          name: "Organic Coffee & Bakery",
-          description: "Afternoon work snack",
-          amount: 18.50,
-          type: "expense",
-          category: "food",
-          payment_method: "upi",
-          transaction_date: `${currentMonth}-08`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-        {
-          id: "t7",
+        });
+
+        // Shopping
+        if (offset !== 3) {
+          generatedTx.push({
+            id: `t-${txIdCounter++}`,
+            user_id: userId,
+            name: "Apparel & Electronics Shopping",
+            description: "Personal lifestyle items",
+            amount: 110 + ((offset * 42) % 90),
+            type: "expense",
+            category: "shopping",
+            payment_method: "credit_card",
+            transaction_date: `${monthPrefix}-20`,
+            created_at: nowIso,
+            updated_at: nowIso,
+          });
+        }
+
+        // Healthcare
+        generatedTx.push({
+          id: `t-${txIdCounter++}`,
           user_id: userId,
           name: "Pharmacy & Wellness",
-          description: "Vitamins and healthcare",
-          amount: 45.00,
+          description: "Health supplements and pharmacy",
+          amount: 40 + ((offset * 11) % 25),
           type: "expense",
           category: "health",
           payment_method: "debit_card",
-          transaction_date: `${currentMonth}-10`,
+          transaction_date: `${monthPrefix}-24`,
           created_at: nowIso,
           updated_at: nowIso,
-        },
-        {
-          id: "t8",
-          user_id: userId,
-          name: "Freelance Project Milestone",
-          description: "UI/UX design consulting gig",
-          amount: 950.00,
-          type: "income",
-          category: "income",
-          payment_method: "upi",
-          transaction_date: `${currentMonth}-12`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-        {
-          id: "t9",
-          user_id: userId,
-          name: "Home Office Accessories",
-          description: "Ergonomic keyboard and desk pad",
-          amount: 120.00,
-          type: "expense",
-          category: "shopping",
-          payment_method: "credit_card",
-          transaction_date: todayStr,
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-      ];
+        });
+      }
+
+      return generatedTx;
+    }
 
     case "debts":
       return [
@@ -426,7 +473,7 @@ function getInitialData(table: string, userId: string): any[] {
 }
 
 function getTableRecords(table: string, userId: string = DEMO_USER_ID): any[] {
-  const storageKey = `ww_db_${table}`;
+  const storageKey = `ww_db_v2_${table}`;
   try {
     const raw = localStorage.getItem(storageKey);
     if (raw) return JSON.parse(raw);
@@ -444,7 +491,7 @@ function getTableRecords(table: string, userId: string = DEMO_USER_ID): any[] {
 
 function saveTableRecords(table: string, records: any[]) {
   try {
-    localStorage.setItem(`ww_db_${table}`, JSON.stringify(records));
+    localStorage.setItem(`ww_db_v2_${table}`, JSON.stringify(records));
   } catch {
     // ignore
   }

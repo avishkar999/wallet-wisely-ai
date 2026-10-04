@@ -29,6 +29,7 @@ import { useMonthlyReset } from "@/hooks/useMonthlyReset";
 import { useMonthlyArchive } from "@/hooks/useMonthlySummaries";
 import { MonthlyHistory } from "@/components/history/MonthlyHistory";
 import { MonthlySummaryCard } from "@/components/dashboard/MonthlySummaryCard";
+import { SpendingTrendsLineChart } from "@/components/analytics/SpendingTrendsLineChart";
 import { useAutoRecurring } from "@/hooks/useAutoRecurring";
 import { RecurringAudit } from "@/components/recurring/RecurringAudit";
 
@@ -184,6 +185,8 @@ const Dashboard = () => {
       {/* Current month summary */}
       <MonthlySummaryCard />
 
+      {/* 6-Month Spending Trends Line Chart */}
+      <SpendingTrendsLineChart />
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

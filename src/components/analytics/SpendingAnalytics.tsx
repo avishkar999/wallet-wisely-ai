@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTransactions } from "@/hooks/useTransactions";
 import { format, subMonths, startOfMonth, endOfMonth, parseISO, eachMonthOfInterval } from "date-fns";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, BarChart3, PieChart, LineChart, ArrowUpRight, ArrowDownRight, Target, Lightbulb } from "lucide-react";
+import { TrendingUp, TrendingDown, BarChart3, PieChart, LineChart as LucideLineChart, Layers, ArrowUpRight, ArrowDownRight, Target, Lightbulb } from "lucide-react";
 import {
   AreaChart,
   Area,
@@ -23,9 +23,11 @@ import {
   Legend,
   ComposedChart,
   Line,
+  LineChart as RechartsLineChart,
 } from "recharts";
 import { SpendingForecast } from "./SpendingForecast";
 import { BudgetVsActualChart } from "./BudgetVsActualChart";
+import { SpendingTrendsLineChart } from "./SpendingTrendsLineChart";
 
 const categoryLabels: Record<string, string> = {
   food: "Food & Dining",
@@ -57,7 +59,7 @@ const COLORS = [
 export function SpendingAnalytics() {
   const { data: transactions = [], isLoading } = useTransactions();
   const [timeRange, setTimeRange] = useState<string>("6");
-  const [chartType, setChartType] = useState<"area" | "bar" | "composed">("composed");
+  const [chartType, setChartType] = useState<"line" | "composed" | "area" | "bar">("line");
 
   const monthsToShow = parseInt(timeRange);
 
@@ -232,16 +234,26 @@ export function SpendingAnalytics() {
           </Select>
           <div className="flex gap-1 bg-secondary rounded-lg p-1">
             <Button
+              variant={chartType === "line" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setChartType("line")}
+              title="Line Chart"
+            >
+              <LucideLineChart className="w-4 h-4" />
+            </Button>
+            <Button
               variant={chartType === "composed" ? "default" : "ghost"}
               size="sm"
               onClick={() => setChartType("composed")}
+              title="Composed Chart"
             >
-              <LineChart className="w-4 h-4" />
+              <Layers className="w-4 h-4" />
             </Button>
             <Button
               variant={chartType === "area" ? "default" : "ghost"}
               size="sm"
               onClick={() => setChartType("area")}
+              title="Area Chart"
             >
               <BarChart3 className="w-4 h-4" />
             </Button>
@@ -249,6 +261,7 @@ export function SpendingAnalytics() {
               variant={chartType === "bar" ? "default" : "ghost"}
               size="sm"
               onClick={() => setChartType("bar")}
+              title="Bar Chart"
             >
               <PieChart className="w-4 h-4" />
             </Button>
@@ -367,7 +380,43 @@ export function SpendingAnalytics() {
             </CardHeader>
             <CardContent className="h-[350px]">
               <ResponsiveContainer width="100%" height="100%">
-                {chartType === "composed" ? (
+                {chartType === "line" ? (
+                  <RechartsLineChart data={monthlyData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(222, 30%, 18%)" vertical={false} opacity={0.6} />
+                    <XAxis dataKey="shortMonth" stroke="hsl(215, 20%, 55%)" fontSize={12} tickLine={false} />
+                    <YAxis stroke="hsl(215, 20%, 55%)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="expense"
+                      name="Spending"
+                      stroke="hsl(168, 60%, 55%)"
+                      strokeWidth={3}
+                      dot={{ r: 4, fill: "hsl(228, 30%, 7%)", stroke: "hsl(168, 60%, 55%)", strokeWidth: 2 }}
+                      activeDot={{ r: 7, fill: "hsl(168, 60%, 55%)", stroke: "hsl(228, 33%, 4%)", strokeWidth: 3 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="income"
+                      name="Income"
+                      stroke="hsl(250, 55%, 65%)"
+                      strokeWidth={2}
+                      strokeDasharray="4 4"
+                      dot={{ r: 3, fill: "hsl(228, 30%, 7%)", stroke: "hsl(250, 55%, 65%)", strokeWidth: 1.5 }}
+                      activeDot={{ r: 5, fill: "hsl(250, 55%, 65%)", stroke: "hsl(228, 33%, 4%)", strokeWidth: 2 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="savings"
+                      name="Savings"
+                      stroke="hsl(142, 76%, 45%)"
+                      strokeWidth={1.5}
+                      strokeDasharray="2 2"
+                      dot={false}
+                    />
+                  </RechartsLineChart>
+                ) : chartType === "composed" ? (
                   <ComposedChart data={monthlyData}>
                     <defs>
                       <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
