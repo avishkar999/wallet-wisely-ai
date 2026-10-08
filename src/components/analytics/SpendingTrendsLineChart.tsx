@@ -229,6 +229,20 @@ export function SpendingTrendsLineChart({
     );
   }
 
+  if (transactions.length === 0) {
+    return (
+      <div className={`glass-premium rounded-2xl p-6 sm:p-8 border border-border/40 text-center ${className}`}>
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3 text-primary">
+          <TrendingDown className="w-5 h-5 opacity-70" />
+        </div>
+        <h4 className="text-base font-semibold text-foreground">6-Month Spending Trends</h4>
+        <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+          No transactions found in the past 6 months. Once you start recording, a smooth Recharts monotone curve will track your monthly spending trajectory.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}

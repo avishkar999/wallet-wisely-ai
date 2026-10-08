@@ -11,15 +11,15 @@ const isConfigured = Boolean(
   !SUPABASE_URL.includes('placeholder')
 );
 
-// Demo user ID used across seeded mock records
+// Demo user ID used across sessions
 const DEMO_USER_ID = "demo-user-id";
 const DEMO_USER = {
   id: DEMO_USER_ID,
   app_metadata: {},
-  user_metadata: { display_name: "Demo User" },
+  user_metadata: { display_name: "Avishkar" },
   aud: "authenticated",
   created_at: new Date().toISOString(),
-  email: "demo@walletwisely.app",
+  email: "demo@coinkeeper.app",
 };
 
 const DEMO_SESSION = {
@@ -32,31 +32,90 @@ const DEMO_SESSION = {
 
 function getStoredSession() {
   try {
-    const raw = localStorage.getItem("wallet_wisely_mock_session");
+    const raw = localStorage.getItem("coinkeeper_session_v3");
     if (raw) return JSON.parse(raw);
   } catch {
     // ignore
   }
-  return null;
+  return DEMO_SESSION;
 }
 
 function setStoredSession(session: any) {
   try {
     if (session) {
-      localStorage.setItem("wallet_wisely_mock_session", JSON.stringify(session));
+      localStorage.setItem("coinkeeper_session_v3", JSON.stringify(session));
     } else {
-      localStorage.removeItem("wallet_wisely_mock_session");
+      localStorage.removeItem("coinkeeper_session_v3");
     }
   } catch {
     // ignore
   }
 }
 
-// Initial mock database seed
+// Zero-data storage purge and key version
+const CLEAN_STORAGE_VERSION = "coinkeeper_clean_zero_v3";
+
+function purgeOldFinancialData() {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    const purged = localStorage.getItem(CLEAN_STORAGE_VERSION);
+    if (!purged) {
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (
+          key &&
+          (key.startsWith("ww_db_") ||
+            key.startsWith("wallet_wisely_") ||
+            key.startsWith("coinkeeper_db_") ||
+            key.startsWith("coinkeeper_custom_") ||
+            key.startsWith("coinkeeper_financial_rules_") ||
+            key.startsWith("coinkeeper_income_sources_") ||
+            key.startsWith("coinkeeper_user_profile_"))
+        ) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
+      localStorage.setItem(CLEAN_STORAGE_VERSION, "true");
+    }
+  } catch {
+    // ignore
+  }
+}
+
+// Run storage cleanup immediately
+purgeOldFinancialData();
+
+export function clearAllFinancialData() {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return;
+    const tables = [
+      "transactions",
+      "budgets",
+      "debts",
+      "investments",
+      "savings_goals",
+      "recurring_transactions",
+      "emergency_fund",
+      "monthly_summaries",
+      "accounts",
+      "rentals",
+    ];
+    tables.forEach((t) => {
+      localStorage.setItem(`ck_db_clean_${t}`, JSON.stringify([]));
+    });
+    localStorage.removeItem("coinkeeper_clean_profile_v3");
+    localStorage.removeItem("coinkeeper_clean_cycles_v3");
+    localStorage.removeItem("coinkeeper_clean_rules_v3");
+  } catch {
+    // ignore
+  }
+}
+
+// Initial mock database seed — ABSOLUTE ZERO DATA
 function getInitialData(table: string, userId: string): any[] {
   const now = new Date();
-  const currentMonth = now.toISOString().slice(0, 7);
-  const todayStr = now.toISOString().slice(0, 10);
   const nowIso = now.toISOString();
 
   switch (table) {
@@ -65,7 +124,7 @@ function getInitialData(table: string, userId: string): any[] {
         {
           id: "profile-1",
           user_id: userId,
-          display_name: "Alex Morgan",
+          display_name: "Avishkar",
           avatar_url: null,
           created_at: nowIso,
           updated_at: nowIso,
@@ -77,403 +136,32 @@ function getInitialData(table: string, userId: string): any[] {
         {
           id: "settings-1",
           user_id: userId,
-          monthly_budget_goal: 3200,
-          last_monthly_reset: `${currentMonth}-01`,
+          monthly_budget_goal: 0,
+          last_monthly_reset: null,
           csv_column_mappings: {},
           created_at: nowIso,
           updated_at: nowIso,
         },
       ];
 
-    case "emergency_fund":
-      return [
-        {
-          id: "emergency-1",
-          user_id: userId,
-          current_amount: 8500,
-          goal_amount: 15000,
-          target_date: `${now.getFullYear()}-12-31`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-      ];
-
+    // Every financial table starts at 100% clean ZERO DATA
+    case "transactions":
     case "budgets":
-      return [
-        { id: "b1", user_id: userId, category: "food", budgeted_amount: 600, month: `${currentMonth}-01`, created_at: nowIso, updated_at: nowIso },
-        { id: "b2", user_id: userId, category: "transport", budgeted_amount: 250, month: `${currentMonth}-01`, created_at: nowIso, updated_at: nowIso },
-        { id: "b3", user_id: userId, category: "bills", budgeted_amount: 400, month: `${currentMonth}-01`, created_at: nowIso, updated_at: nowIso },
-        { id: "b4", user_id: userId, category: "entertainment", budgeted_amount: 200, month: `${currentMonth}-01`, created_at: nowIso, updated_at: nowIso },
-        { id: "b5", user_id: userId, category: "shopping", budgeted_amount: 350, month: `${currentMonth}-01`, created_at: nowIso, updated_at: nowIso },
-        { id: "b6", user_id: userId, category: "health", budgeted_amount: 150, month: `${currentMonth}-01`, created_at: nowIso, updated_at: nowIso },
-      ];
-
-    case "transactions": {
-      const generatedTx: any[] = [];
-      let txIdCounter = 1;
-
-      for (let offset = 5; offset >= 0; offset--) {
-        const d = new Date(now.getFullYear(), now.getMonth() - offset, 1);
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const monthPrefix = `${y}-${m}`;
-
-        // Monthly salary
-        generatedTx.push({
-          id: `t-${txIdCounter++}`,
-          user_id: userId,
-          name: "Monthly Salary Deposit",
-          description: "Primary Employer Salary",
-          amount: 4800,
-          type: "income",
-          category: "income",
-          payment_method: "neft",
-          transaction_date: `${monthPrefix}-01`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        });
-
-        // Freelance or bonus some months
-        if (offset === 0 || offset === 2 || offset === 4) {
-          generatedTx.push({
-            id: `t-${txIdCounter++}`,
-            user_id: userId,
-            name: "Consulting Payout",
-            description: "Product advisory milestone",
-            amount: offset === 4 ? 1200 : offset === 2 ? 650 : 950,
-            type: "income",
-            category: "income",
-            payment_method: "upi",
-            transaction_date: `${monthPrefix}-12`,
-            created_at: nowIso,
-            updated_at: nowIso,
-          });
-        }
-
-        // Rent & Housing
-        generatedTx.push({
-          id: `t-${txIdCounter++}`,
-          user_id: userId,
-          name: "Apartment Rent & Society",
-          description: "Monthly lease payment",
-          amount: 1250,
-          type: "expense",
-          category: "bills",
-          payment_method: "neft",
-          transaction_date: `${monthPrefix}-02`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        });
-
-        // Electricity & utilities
-        generatedTx.push({
-          id: `t-${txIdCounter++}`,
-          user_id: userId,
-          name: "Electric & Water Utilities",
-          description: "Monthly utility invoices",
-          amount: 82 + ((offset * 14) % 30),
-          type: "expense",
-          category: "bills",
-          payment_method: "auto_pay",
-          transaction_date: `${monthPrefix}-04`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        });
-
-        // Groceries
-        generatedTx.push({
-          id: `t-${txIdCounter++}`,
-          user_id: userId,
-          name: "Fresh Market & Organic Groceries",
-          description: "Household supplies & vegetables",
-          amount: 180 + ((offset * 27) % 55),
-          type: "expense",
-          category: "food",
-          payment_method: "debit_card",
-          transaction_date: `${monthPrefix}-07`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        });
-
-        // Dining & Coffee
-        generatedTx.push({
-          id: `t-${txIdCounter++}`,
-          user_id: userId,
-          name: "Artisan Cafe & Dining",
-          description: "Weekend meals with friends",
-          amount: 65 + ((offset * 18) % 40),
-          type: "expense",
-          category: "food",
-          payment_method: "upi",
-          transaction_date: `${monthPrefix}-11`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        });
-
-        // Transport
-        generatedTx.push({
-          id: `t-${txIdCounter++}`,
-          user_id: userId,
-          name: "City Metro & Fuel",
-          description: "Commuter transport expenses",
-          amount: 70 + ((offset * 9) % 25),
-          type: "expense",
-          category: "transport",
-          payment_method: "upi",
-          transaction_date: `${monthPrefix}-15`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        });
-
-        // Streaming / Entertainment
-        generatedTx.push({
-          id: `t-${txIdCounter++}`,
-          user_id: userId,
-          name: "Digital Streaming & Cloud",
-          description: "Subscription entertainment bundle",
-          amount: 28.99,
-          type: "expense",
-          category: "entertainment",
-          payment_method: "credit_card",
-          transaction_date: `${monthPrefix}-17`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        });
-
-        // Shopping
-        if (offset !== 3) {
-          generatedTx.push({
-            id: `t-${txIdCounter++}`,
-            user_id: userId,
-            name: "Apparel & Electronics Shopping",
-            description: "Personal lifestyle items",
-            amount: 110 + ((offset * 42) % 90),
-            type: "expense",
-            category: "shopping",
-            payment_method: "credit_card",
-            transaction_date: `${monthPrefix}-20`,
-            created_at: nowIso,
-            updated_at: nowIso,
-          });
-        }
-
-        // Healthcare
-        generatedTx.push({
-          id: `t-${txIdCounter++}`,
-          user_id: userId,
-          name: "Pharmacy & Wellness",
-          description: "Health supplements and pharmacy",
-          amount: 40 + ((offset * 11) % 25),
-          type: "expense",
-          category: "health",
-          payment_method: "debit_card",
-          transaction_date: `${monthPrefix}-24`,
-          created_at: nowIso,
-          updated_at: nowIso,
-        });
-      }
-
-      return generatedTx;
-    }
-
     case "debts":
-      return [
-        {
-          id: "d1",
-          user_id: userId,
-          name: "Higher Education Loan",
-          type: "education_loan",
-          principal_amount: 14000,
-          outstanding_amount: 7200,
-          interest_rate: 4.8,
-          minimum_payment: 240,
-          due_date: 15,
-          next_payment_date: `${currentMonth}-15`,
-          last_payment_date: null,
-          start_date: "2023-01-15",
-          end_date: "2028-01-15",
-          reminder_enabled: true,
-          reminder_days_before: 3,
-          notes: "Low-interest federal student financing",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-        {
-          id: "d2",
-          user_id: userId,
-          name: "Platinum Cashback Card",
-          type: "credit_card",
-          principal_amount: 2500,
-          outstanding_amount: 980,
-          interest_rate: 17.5,
-          minimum_payment: 85,
-          due_date: 22,
-          next_payment_date: `${currentMonth}-22`,
-          last_payment_date: null,
-          start_date: "2024-03-01",
-          end_date: null,
-          reminder_enabled: true,
-          reminder_days_before: 2,
-          notes: "Priority payoff to avoid interest",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-      ];
-
     case "investments":
-      return [
-        {
-          id: "inv1",
-          user_id: userId,
-          name: "Global Total Market Index ETF",
-          type: "mutual_fund",
-          invested_amount: 5000,
-          current_value: 6350,
-          units: 25,
-          nav: 254,
-          purchase_date: "2023-06-10",
-          risk_level: "Moderate",
-          notes: "Core long-term compounder",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-        {
-          id: "inv2",
-          user_id: userId,
-          name: "Clean Energy Innovation Fund",
-          type: "stock",
-          invested_amount: 2800,
-          current_value: 3420,
-          units: 40,
-          nav: 85.5,
-          purchase_date: "2023-09-15",
-          risk_level: "High",
-          notes: "Renewable energy sector basket",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-        {
-          id: "inv3",
-          user_id: userId,
-          name: "High-Yield Bank Deposit",
-          type: "fixed_deposit",
-          invested_amount: 4000,
-          current_value: 4320,
-          units: 1,
-          nav: 4320,
-          purchase_date: "2024-01-05",
-          risk_level: "Low",
-          notes: "Guaranteed 7.5% annual return",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-      ];
-
     case "savings_goals":
-      return [
-        {
-          id: "sg1",
-          user_id: userId,
-          name: "Emergency Safety Net",
-          category: "Emergency",
-          target_amount: 15000,
-          current_amount: 8500,
-          target_date: `${now.getFullYear() + 1}-06-30`,
-          is_completed: false,
-          notes: "6 months living buffer",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-        {
-          id: "sg2",
-          user_id: userId,
-          name: "Tokyo & Kyoto Vacation",
-          category: "Travel",
-          target_amount: 3800,
-          current_amount: 2600,
-          target_date: `${now.getFullYear()}-11-15`,
-          is_completed: false,
-          notes: "Autumn trip savings",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-        {
-          id: "sg3",
-          user_id: userId,
-          name: "Developer Workstation",
-          category: "Electronics",
-          target_amount: 1800,
-          current_amount: 1800,
-          target_date: `${now.getFullYear()}-03-01`,
-          is_completed: true,
-          notes: "Goal reached!",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-      ];
-
     case "recurring_transactions":
-      return [
-        {
-          id: "rt1",
-          user_id: userId,
-          title: "Apartment Rental Payment",
-          amount: 1250,
-          type: "expense",
-          category: "bills",
-          frequency: "monthly",
-          day_of_month: 1,
-          day_of_week: null,
-          next_due_date: `${currentMonth}-01`,
-          reminder_days_before: 3,
-          is_active: true,
-          notes: "Direct lease transfer",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-        {
-          id: "rt2",
-          user_id: userId,
-          title: "High-Speed Fiber Internet",
-          amount: 65,
-          type: "expense",
-          category: "bills",
-          frequency: "monthly",
-          day_of_month: 10,
-          day_of_week: null,
-          next_due_date: `${currentMonth}-10`,
-          reminder_days_before: 2,
-          is_active: true,
-          notes: "Monthly autopay",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-        {
-          id: "rt3",
-          user_id: userId,
-          title: "Spotify & Cloud Storage",
-          amount: 19.99,
-          type: "expense",
-          category: "entertainment",
-          frequency: "monthly",
-          day_of_month: 18,
-          day_of_week: null,
-          next_due_date: `${currentMonth}-18`,
-          reminder_days_before: 1,
-          is_active: true,
-          notes: "Digital lifestyle bundle",
-          created_at: nowIso,
-          updated_at: nowIso,
-        },
-      ];
-
+    case "emergency_fund":
+    case "monthly_summaries":
+    case "accounts":
+    case "rentals":
     default:
       return [];
   }
 }
 
 function getTableRecords(table: string, userId: string = DEMO_USER_ID): any[] {
-  const storageKey = `ww_db_v2_${table}`;
+  const storageKey = `ck_db_clean_${table}`;
   try {
     const raw = localStorage.getItem(storageKey);
     if (raw) return JSON.parse(raw);
@@ -491,14 +179,13 @@ function getTableRecords(table: string, userId: string = DEMO_USER_ID): any[] {
 
 function saveTableRecords(table: string, records: any[]) {
   try {
-    localStorage.setItem(`ww_db_v2_${table}`, JSON.stringify(records));
+    localStorage.setItem(`ck_db_clean_${table}`, JSON.stringify(records));
   } catch {
     // ignore
   }
 }
 
 function createMockQueryBuilder(table: string) {
-  let records = getTableRecords(table);
   let filters: Array<(item: any) => boolean> = [];
   let sortFn: ((a: any, b: any) => number) | null = null;
   let limitVal: number | null = null;
@@ -655,7 +342,6 @@ function createMockSupabaseClient(): any {
     auth: {
       onAuthStateChange: (callback: (event: string, session: any) => void) => {
         authListeners.push(callback);
-        // Initially broadcast current session
         const currentSession = getStoredSession();
         setTimeout(() => callback("INITIAL_SESSION", currentSession), 10);
         return {
@@ -683,7 +369,7 @@ function createMockSupabaseClient(): any {
           user: {
             ...DEMO_USER,
             email: email || DEMO_USER.email,
-            user_metadata: { display_name: email ? email.split("@")[0] : "Demo User" },
+            user_metadata: { display_name: email ? email.split("@")[0] : "Avishkar" },
           },
         };
         setStoredSession(session);
@@ -691,7 +377,7 @@ function createMockSupabaseClient(): any {
         return { data: { user: session.user, session }, error: null };
       },
       signUp: async ({ email, options }: { email: string; password?: string; options?: any }) => {
-        const displayName = options?.data?.display_name || (email ? email.split("@")[0] : "Demo User");
+        const displayName = options?.data?.display_name || (email ? email.split("@")[0] : "Avishkar");
         const session = {
           ...DEMO_SESSION,
           user: {

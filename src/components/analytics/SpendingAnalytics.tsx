@@ -28,6 +28,8 @@ import {
 import { SpendingForecast } from "./SpendingForecast";
 import { BudgetVsActualChart } from "./BudgetVsActualChart";
 import { SpendingTrendsLineChart } from "./SpendingTrendsLineChart";
+import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
+import { Sparkles, Plus } from "lucide-react";
 
 const categoryLabels: Record<string, string> = {
   food: "Food & Dining",
@@ -58,6 +60,7 @@ const COLORS = [
 
 export function SpendingAnalytics() {
   const { data: transactions = [], isLoading } = useTransactions();
+  const { openQuickAdd } = useCoinKeeper();
   const [timeRange, setTimeRange] = useState<string>("6");
   const [chartType, setChartType] = useState<"line" | "composed" | "area" | "bar">("line");
 
@@ -193,6 +196,43 @@ export function SpendingAnalytics() {
     );
   }
 
+  if (transactions.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-foreground">Spending Analytics</h2>
+          <p className="text-muted-foreground">Track your financial trends over time</p>
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl border border-dashed border-border/70 p-10 sm:p-14 text-center max-w-2xl mx-auto my-8 bg-card/40 backdrop-blur-xl"
+        >
+          <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4 text-primary">
+            <BarChart3 className="w-8 h-8" />
+          </div>
+          <span className="text-[11px] font-mono uppercase tracking-widest text-primary font-bold">
+            Analytics Standing By
+          </span>
+          <h3 className="text-2xl font-bold text-foreground tracking-tight mt-1 mb-2">
+            Your analytics will appear here once you start tracking.
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6 leading-relaxed">
+            CoinKeeper avoids manufacturing fake graphs or speculative assumptions. As soon as you log your real income or expenses, interactive spending curves, category breakdowns, and forecasts will activate automatically.
+          </p>
+          <Button
+            type="button"
+            onClick={() => openQuickAdd("expense")}
+            className="bg-primary text-primary-foreground font-semibold px-6 h-10 shadow-sm"
+          >
+            <Plus className="w-4 h-4 mr-1.5" /> + Add your first transaction
+          </Button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -219,20 +259,22 @@ export function SpendingAnalytics() {
         </TabsList>
 
         <TabsContent value="trends" className="space-y-6">
+          {/* 6-Month Spending Trends Recharts Card */}
+          <SpendingTrendsLineChart />
+
           {/* Controls */}
           <div className="flex items-center gap-3">
-        <div className="flex items-center gap-3">
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Time range" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3">Last 3 months</SelectItem>
-              <SelectItem value="6">Last 6 months</SelectItem>
-              <SelectItem value="12">Last 12 months</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex gap-1 bg-secondary rounded-lg p-1">
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Time range" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">Last 3 months</SelectItem>
+                <SelectItem value="6">Last 6 months</SelectItem>
+                <SelectItem value="12">Last 12 months</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex gap-1 bg-secondary rounded-lg p-1">
             <Button
               variant={chartType === "line" ? "default" : "ghost"}
               size="sm"
@@ -267,7 +309,6 @@ export function SpendingAnalytics() {
             </Button>
           </div>
         </div>
-      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

@@ -91,7 +91,7 @@ export default function Auth() {
         } else {
           toast({
             title: "Account Created!",
-            description: "Welcome to WealthPilot. Let's manage your finances!",
+            description: "Welcome to CoinKeeper. Let's build your financial life!",
           });
           navigate(redirectTo);
         }
@@ -221,7 +221,7 @@ export default function Auth() {
                 const { error } = await signIn("demo@walletwisely.app", "demo123");
                 if (!error) {
                   toast({
-                    title: "Welcome to Wallet Wisely!",
+                    title: "Welcome to CoinKeeper!",
                     description: "Signed in as Demo User.",
                   });
                   navigate(redirectTo);
@@ -233,7 +233,7 @@ export default function Auth() {
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              AI Finance App — Version 2.0 (Functional Upgrade)
+              CoinKeeper — Personal Finance Operating System
             </p>
           </CardContent>
         </Card>

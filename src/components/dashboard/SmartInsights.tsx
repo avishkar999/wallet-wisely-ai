@@ -42,7 +42,7 @@ export function SmartInsights() {
       description: `Saving ${savingsRate}% currently. Try the 50/30/20 rule for better balance.`,
       action: "Learn more"
     });
-  } else if (savingsRate >= 20) {
+  } else if (savingsRate >= 20 && totalIncome > 0) {
     insights.push({
       type: "success",
       title: "Amazing savings habit! 🎉",

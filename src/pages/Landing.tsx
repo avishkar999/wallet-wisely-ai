@@ -64,7 +64,7 @@ export default function Landing() {
             <div className="h-9 w-9 rounded-xl bg-gradient-primary flex items-center justify-center">
               <Wallet className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-bold text-lg">Wallet Wisely</span>
+            <span className="font-bold text-lg">CoinKeeper</span>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/auth">
@@ -89,17 +89,16 @@ export default function Landing() {
             transition={{ duration: 0.6 }}
           >
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-sm font-medium mb-6">
-              <Sparkles className="h-4 w-4" /> AI-Powered Finance Manager
+              <Sparkles className="h-4 w-4" /> Personal Finance Operating System
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
-              Your Wallet{" "}
+              Finance Built Around{" "}
               <span className="bg-gradient-primary bg-clip-text text-transparent">
-                Deserves Better
+                Your Life
               </span>
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-              Track spending, manage debts, grow investments, and hit your savings goals — 
-              all from one beautifully simple dashboard.
+              CoinKeeper adapts to you — custom income sources, user-defined categories, variable monthly budgets, multiple accounts, and real-time Money Pulse.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/auth">

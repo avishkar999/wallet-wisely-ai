@@ -66,12 +66,14 @@ export function RecentActivity() {
 
       {/* Transaction List */}
       {recentTransactions.length === 0 ? (
-        <div className="text-center py-8">
-          <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
-            <MoreHorizontal className="w-6 h-6 text-muted-foreground" />
+        <div className="text-center py-8 px-4 rounded-xl border border-dashed border-border/60 bg-secondary/10">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3 text-primary">
+            <Utensils className="w-5 h-5 opacity-70" />
           </div>
-          <p className="text-sm text-muted-foreground">No transactions yet</p>
-          <p className="text-xs text-muted-foreground mt-1">Add your first expense or income</p>
+          <h4 className="text-sm font-semibold text-foreground">No transactions recorded yet</h4>
+          <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+            Your ledger is clean and ready. Every payment or deposit you record will appear here.
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
