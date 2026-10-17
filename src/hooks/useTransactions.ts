@@ -72,6 +72,43 @@ export function useAddTransaction() {
   });
 }
 
+export function useBatchAddTransactions() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async (
+      transactions: Array<
+        Omit<TransactionInsert, "user_id"> & {
+          tags?: string[];
+          merchant?: string;
+          reference_no?: string;
+          raw_description?: string;
+        }
+      >
+    ) => {
+      if (!user) throw new Error("Not authenticated");
+      if (transactions.length === 0) return [];
+
+      const payload = transactions.map((t) => ({
+        ...t,
+        user_id: user.id,
+      }));
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .insert(payload);
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["monthly_summaries"] });
+    },
+  });
+}
+
 export function useUpdateTransaction() {
   const queryClient = useQueryClient();
 

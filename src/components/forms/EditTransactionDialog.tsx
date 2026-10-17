@@ -62,6 +62,7 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
   const [paymentMethod, setPaymentMethod] = useState<string>("upi");
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
+  const [tagsInput, setTagsInput] = useState("");
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
 
   const updateTransaction = useUpdateTransaction();
@@ -78,6 +79,8 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
       setPaymentMethod(transaction.payment_method);
       setDate(transaction.transaction_date);
       setDescription(transaction.description || "");
+      const existingTags: string[] = (transaction as any).tags || [];
+      setTagsInput(existingTags.join(", "));
     }
   }, [transaction]);
 
@@ -94,6 +97,11 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
     }
 
     try {
+      const parsedTags = tagsInput
+        .split(",")
+        .map(t => t.trim().replace(/^#/, ""))
+        .filter(Boolean);
+
       await updateTransaction.mutateAsync({
         id: transaction.id,
         name,
@@ -103,7 +111,8 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
         payment_method: paymentMethod as any,
         transaction_date: date,
         description: description || null,
-      });
+        tags: parsedTags,
+      } as any);
 
       toast({
         title: "Transaction Updated",
@@ -233,6 +242,18 @@ export function EditTransactionDialog({ transaction, open, onOpenChange }: EditT
                 placeholder="Add a note..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Custom Labels / Tags</Label>
+                <span className="text-[11px] text-muted-foreground">Comma-separated</span>
+              </div>
+              <Input
+                placeholder="e.g. Groceries, Rent, Coffee, Client"
+                value={tagsInput}
+                onChange={(e) => setTagsInput(e.target.value)}
               />
             </div>
 

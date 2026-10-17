@@ -20,7 +20,7 @@ import { TransactionsHistory } from "@/components/transactions/TransactionsHisto
 import { SpendingAnalytics } from "@/components/analytics/SpendingAnalytics";
 import { GoalTracker } from "@/components/goals/GoalTracker";
 import { RentalManager } from "@/components/rentals/RentalManager";
-import { Bell, Search, Menu, Sparkles, Sliders, Plus, User, Layers, Wallet, CreditCard } from "lucide-react";
+import { Bell, Search, Menu, Sparkles, Sliders, Plus, User, Layers, Wallet, CreditCard, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -49,6 +49,8 @@ import { SubscriptionImpactCard } from "@/components/dashboard/SubscriptionImpac
 import { SmartQuickAddTransactionDialog } from "@/components/forms/SmartQuickAddTransactionDialog";
 import { PersonalizationOnboarding } from "@/components/onboarding/PersonalizationOnboarding";
 import { CategoryManagerDialog } from "@/components/categories/CategoryManagerDialog";
+import { BankImportModal } from "@/components/import/BankImportModal";
+import { TransactionCategorizerBar } from "@/components/categorizer/TransactionCategorizerBar";
 
 const Index = () => {
   // Monthly cycles handling
@@ -63,6 +65,8 @@ const Index = () => {
     showDashboardCustomizer,
     setShowDashboardCustomizer,
     setShowQuickAddModal,
+    showBankImportModal,
+    setShowBankImportModal,
   } = useCoinKeeper();
 
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -247,6 +251,18 @@ const Index = () => {
                 <Sliders className="w-3.5 h-3.5" /> Layout
               </Button>
 
+              {/* Import Bank Statement Button */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBankImportModal(true)}
+                className="hidden md:flex text-xs h-8 gap-1.5 border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                title="Import Bank Statement (CSV or Excel)"
+              >
+                <UploadCloud className="w-3.5 h-3.5 text-primary" /> Import
+              </Button>
+
               {/* Quick Add Button */}
               <Button
                 type="button"
@@ -297,6 +313,10 @@ const Index = () => {
       <CategoryManagerDialog
         open={showCategoryManager}
         onOpenChange={setShowCategoryManager}
+      />
+      <BankImportModal
+        open={showBankImportModal}
+        onOpenChange={setShowBankImportModal}
       />
     </div>
   );
@@ -376,7 +396,10 @@ const AdaptiveDashboard = ({ onNavigateTab }: { onNavigateTab?: (tab: string) =>
       {/* 3. Signature Money Pulse (Communicating current condition) */}
       <MoneyPulseCard />
 
-      {/* 4. Dynamic Card Order based on user persona & customization */}
+      {/* 4. Transaction Categorizer & Quick Filter Bar */}
+      <TransactionCategorizerBar />
+
+      {/* 5. Dynamic Card Order based on user persona & customization */}
       <div className="space-y-5">
         {cardsOrder
           .filter((id) => id !== "pulse" && id !== "cycle")

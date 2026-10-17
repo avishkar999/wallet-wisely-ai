@@ -1,0 +1,172 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Primitives
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Validation Blueprint: UserProfile
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'displayName', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'displayName', 'email', 'monthlyBudgetGoal', 'currency', 'createdAt', 'updatedAt'])
+        && data.userId is string && data.userId.size() <= 128
+        && data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100
+        && (!('email' in data) || (data.email is string && data.email.size() <= 255))
+        && (!('monthlyBudgetGoal' in data) || (data.monthlyBudgetGoal is number && data.monthlyBudgetGoal >= 0))
+        && (!('currency' in data) || (data.currency is string && data.currency.size() <= 10))
+        && data.createdAt is string && data.createdAt.size() <= 35
+        && data.updatedAt is string && data.updatedAt.size() <= 35;
+    }
+
+    // Validation Blueprint: Transaction
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['userId', 'amount', 'type', 'category', 'date', 'description', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'amount', 'type', 'category', 'date', 'description', 'merchant', 'paymentMethod', 'referenceNo', 'tags', 'source', 'importBatchId', 'createdAt', 'updatedAt'])
+        && data.userId is string && data.userId.size() <= 128
+        && data.amount is number && data.amount >= 0
+        && data.type is string && (data.type == 'expense' || data.type == 'income' || data.type == 'transfer')
+        && data.category is string && data.category.size() <= 50
+        && data.date is string && data.date.size() <= 20
+        && data.description is string && data.description.size() <= 500
+        && (!('merchant' in data) || (data.merchant is string && data.merchant.size() <= 150))
+        && (!('paymentMethod' in data) || (data.paymentMethod is string && data.paymentMethod.size() <= 50))
+        && (!('referenceNo' in data) || (data.referenceNo is string && data.referenceNo.size() <= 100))
+        && (!('tags' in data) || (data.tags is list && data.tags.size() <= 20 && (data.tags.size() == 0 || data.tags[0] is string)))
+        && (!('source' in data) || (data.source is string && data.source.size() <= 50))
+        && (!('importBatchId' in data) || (data.importBatchId is string && data.importBatchId.size() <= 128))
+        && data.createdAt is string && data.createdAt.size() <= 35
+        && data.updatedAt is string && data.updatedAt.size() <= 35;
+    }
+
+    // Validation Blueprint: Budget
+    function isValidBudget(data) {
+      return data.keys().hasAll(['userId', 'category', 'amount', 'month', 'year', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['userId', 'category', 'amount', 'month', 'year', 'createdAt', 'updatedAt'])
+        && data.userId is string && data.userId.size() <= 128
+        && data.category is string && data.category.size() <= 50
+        && data.amount is number && data.amount >= 0
+        && data.month is number && data.month >= 1 && data.month <= 12
+        && data.year is number && data.year >= 2000 && data.year <= 2100
+        && data.createdAt is string && data.createdAt.size() <= 35
+        && data.updatedAt is string && data.updatedAt.size() <= 35;
+    }
+
+    // Validation Blueprint: BankImportBatch
+    function isValidBatch(data) {
+      return data.keys().hasAll(['userId', 'fileName', 'importedCount', 'importedAt'])
+        && data.keys().hasOnly(['userId', 'fileName', 'bankName', 'importedCount', 'duplicatesSkipped', 'totalAmount', 'importedAt'])
+        && data.userId is string && data.userId.size() <= 128
+        && data.fileName is string && data.fileName.size() <= 255
+        && (!('bankName' in data) || (data.bankName is string && data.bankName.size() <= 100))
+        && data.importedCount is number && data.importedCount >= 0
+        && (!('duplicatesSkipped' in data) || (data.duplicatesSkipped is number && data.duplicatesSkipped >= 0))
+        && (!('totalAmount' in data) || data.totalAmount is number)
+        && data.importedAt is string && data.importedAt.size() <= 35;
+    }
+
+    // 1. User Profiles Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if false; // Blanket user scraping is strictly forbidden
+      allow create: if isSignedIn()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUser(incoming())
+        && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn()
+        && isValidId(userId)
+        && request.auth.uid == userId
+        && isValidUser(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'monthlyBudgetGoal', 'currency', 'updatedAt']);
+      allow delete: if false;
+    }
+
+    // 2. Transactions Collection
+    match /transactions/{transactionId} {
+      allow get: if isSignedIn()
+        && isValidId(transactionId)
+        && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && isValidId(transactionId)
+        && isValidTransaction(incoming())
+        && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn()
+        && isValidId(transactionId)
+        && resource.data.userId == request.auth.uid
+        && isValidTransaction(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'amount', 'type', 'category', 'date', 'description', 'merchant',
+          'paymentMethod', 'referenceNo', 'tags', 'source', 'importBatchId', 'updatedAt'
+        ]);
+      allow delete: if isSignedIn()
+        && isValidId(transactionId)
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // 3. Budgets Collection
+    match /budgets/{budgetId} {
+      allow get: if isSignedIn()
+        && isValidId(budgetId)
+        && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && isValidId(budgetId)
+        && isValidBudget(incoming())
+        && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn()
+        && isValidId(budgetId)
+        && resource.data.userId == request.auth.uid
+        && isValidBudget(incoming())
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['category', 'amount', 'month', 'year', 'updatedAt']);
+      allow delete: if isSignedIn()
+        && isValidId(budgetId)
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // 4. Bank Import Batches Collection
+    match /bank_import_batches/{batchId} {
+      allow get: if isSignedIn()
+        && isValidId(batchId)
+        && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && isValidId(batchId)
+        && isValidBatch(incoming())
+        && incoming().userId == request.auth.uid;
+      allow update: if false; // Batches are immutable logs
+      allow delete: if isSignedIn()
+        && isValidId(batchId)
+        && resource.data.userId == request.auth.uid;
+    }
+  }
+}

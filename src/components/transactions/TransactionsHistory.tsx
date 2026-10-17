@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { 
   Receipt, Search, Download, FileSpreadsheet, Filter, 
   ArrowDownLeft, ShoppingBag, Fuel, Smartphone, Zap, 
-  Utensils, Film, Heart, Pencil, Calendar, TrendingUp, TrendingDown
+  Utensils, Film, Heart, Pencil, Calendar, TrendingUp, TrendingDown,
+  UploadCloud, Tag, X
 } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
+import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
 import { EditTransactionDialog } from "@/components/forms/EditTransactionDialog";
 import { AddTransactionDialog } from "@/components/forms/AddTransactionDialog";
 import { exportToCSV, exportToExcel } from "@/utils/exportTransactions";
@@ -60,6 +62,7 @@ const categories = Constants.public.Enums.transaction_category;
 export function TransactionsHistory() {
   const { data: transactions = [], isLoading } = useTransactions();
   const { toast } = useToast();
+  const { openBankImport, dashboardCategoryFilter, setDashboardCategoryFilter } = useCoinKeeper();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -80,15 +83,29 @@ export function TransactionsHistory() {
   // Filter transactions
   const filteredTransactions = useMemo(() => {
     return transactions.filter(txn => {
-      const matchesSearch = txn.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           (txn.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+      const txnTags: string[] = (txn as any).tags || [];
+      const matchesSearch =
+        txn.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (txn.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+        txnTags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
+
       const matchesCategory = categoryFilter === "all" || txn.category === categoryFilter;
       const matchesType = typeFilter === "all" || txn.type === typeFilter;
       const matchesMonth = monthFilter === "all" || txn.transaction_date.startsWith(monthFilter);
-      
-      return matchesSearch && matchesCategory && matchesType && matchesMonth;
+
+      let matchesContextFilter = true;
+      if (dashboardCategoryFilter) {
+        if (dashboardCategoryFilter.startsWith("#")) {
+          const targetTag = dashboardCategoryFilter.slice(1).toLowerCase();
+          matchesContextFilter = txnTags.some(t => t.toLowerCase() === targetTag);
+        } else {
+          matchesContextFilter = txn.category.toLowerCase() === dashboardCategoryFilter.toLowerCase();
+        }
+      }
+
+      return matchesSearch && matchesCategory && matchesType && matchesMonth && matchesContextFilter;
     });
-  }, [transactions, searchQuery, categoryFilter, typeFilter, monthFilter]);
+  }, [transactions, searchQuery, categoryFilter, typeFilter, monthFilter, dashboardCategoryFilter]);
 
   // Calculate summary for filtered transactions
   const summary = useMemo(() => {
@@ -226,18 +243,46 @@ export function TransactionsHistory() {
               <Filter className="w-5 h-5 text-primary" />
               Filters & Export
             </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleExportCSV}>
-                <Download className="w-4 h-4 mr-2" />
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={openBankImport}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8 gap-1.5 font-semibold shadow-sm"
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                Import Statement
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportCSV} className="text-xs h-8">
+                <Download className="w-3.5 h-3.5 mr-1.5" />
                 CSV
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExportExcel}>
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
+              <Button variant="outline" size="sm" onClick={handleExportExcel} className="text-xs h-8">
+                <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
                 Excel
               </Button>
               <AddTransactionDialog />
             </div>
           </div>
+          {dashboardCategoryFilter && (
+            <div className="mt-3 p-2 px-3 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <Tag className="w-3.5 h-3.5 text-primary" />
+                <span>
+                  Filtering by custom tag/category: <strong className="text-foreground">{dashboardCategoryFilter}</strong>
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setDashboardCategoryFilter(null)}
+                className="h-6 text-[11px] px-2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-3 h-3 mr-1" /> Clear Filter
+              </Button>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -348,6 +393,18 @@ export function TransactionsHistory() {
                           <p className="text-sm text-muted-foreground truncate">• {txn.description}</p>
                         )}
                       </div>
+                      {(txn as any).tags && (txn as any).tags.length > 0 && (
+                        <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                          {(txn as any).tags.map((t: string) => (
+                            <span
+                              key={t}
+                              className="text-[10px] px-1.5 py-0.2 rounded bg-secondary/80 text-foreground border border-border/50 font-mono"
+                            >
+                              #{t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex items-center gap-3">

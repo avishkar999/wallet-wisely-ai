@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowUpRight, ArrowDownRight, Utensils, ShoppingBag, Car, Gamepad2, Zap, Heart, Phone, BookOpen, Plane, MoreHorizontal } from "lucide-react";
 import { useTransactions, useFinancialSummary } from "@/hooks/useTransactions";
+import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
 import { format, parseISO } from "date-fns";
 
 const categoryConfig: Record<string, { icon: React.ElementType; color: string }> = {
@@ -20,6 +21,7 @@ const categoryConfig: Record<string, { icon: React.ElementType; color: string }>
 export function RecentActivity() {
   const { data: transactions = [], isLoading } = useTransactions();
   const { income, expenses } = useFinancialSummary();
+  const { dashboardCategoryFilter, setDashboardCategoryFilter } = useCoinKeeper();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -29,7 +31,17 @@ export function RecentActivity() {
     }).format(amount);
   };
 
-  const recentTransactions = transactions.slice(0, 5);
+  const filteredTransactions = transactions.filter(t => {
+    if (!dashboardCategoryFilter) return true;
+    const txnTags: string[] = (t as any).tags || [];
+    if (dashboardCategoryFilter.startsWith("#")) {
+      const targetTag = dashboardCategoryFilter.slice(1).toLowerCase();
+      return txnTags.some(tg => tg.toLowerCase() === targetTag);
+    }
+    return t.category.toLowerCase() === dashboardCategoryFilter.toLowerCase();
+  });
+
+  const recentTransactions = filteredTransactions.slice(0, 5);
 
   if (isLoading) {
     return (
@@ -50,7 +62,16 @@ export function RecentActivity() {
     >
       {/* Header with Summary */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-foreground">Recent Activity</h3>
+        <div>
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <span>Recent Activity</span>
+            {dashboardCategoryFilter && (
+              <span className="text-[10px] font-normal px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                {dashboardCategoryFilter}
+              </span>
+            )}
+          </h3>
+        </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-success">
             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -72,7 +93,9 @@ export function RecentActivity() {
           </div>
           <h4 className="text-sm font-semibold text-foreground">No transactions recorded yet</h4>
           <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-            Your ledger is clean and ready. Every payment or deposit you record will appear here.
+            {dashboardCategoryFilter
+              ? `No transactions matched "${dashboardCategoryFilter}".`
+              : "Your ledger is clean and ready. Every payment or deposit you record will appear here."}
           </p>
         </div>
       ) : (
@@ -81,6 +104,7 @@ export function RecentActivity() {
             const config = categoryConfig[txn.category] || categoryConfig.other;
             const Icon = config.icon;
             const isIncome = txn.type === "income";
+            const tags: string[] = (txn as any).tags || [];
             
             return (
               <motion.div
@@ -98,9 +122,16 @@ export function RecentActivity() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{txn.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {format(parseISO(txn.transaction_date), "MMM d")} · {txn.category}
-                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-xs text-muted-foreground">
+                      {format(parseISO(txn.transaction_date), "MMM d")} · {txn.category}
+                    </p>
+                    {tags.length > 0 && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-secondary text-muted-foreground font-mono">
+                        #{tags[0]}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <span className={`text-sm font-semibold ${isIncome ? 'text-success' : 'text-foreground'}`}>
                   {isIncome ? '+' : '-'}{formatCurrency(Number(txn.amount))}

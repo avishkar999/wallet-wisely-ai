@@ -1,0 +1,221 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with display name, currency, budget goals, and preferences",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID matching document ID",
+          "maxLength": 128
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Display name of the user",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user",
+          "maxLength": 255
+        },
+        "monthlyBudgetGoal": {
+          "type": "number",
+          "description": "Overall monthly spending budget goal"
+        },
+        "currency": {
+          "type": "string",
+          "description": "User chosen currency symbol or code",
+          "maxLength": 10
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation",
+          "maxLength": 35
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update",
+          "maxLength": 35
+        }
+      },
+      "required": ["userId", "displayName", "createdAt", "updatedAt"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A single financial transaction (expense, income, or transfer) belonging to a user",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the transaction owner",
+          "maxLength": 128
+        },
+        "amount": {
+          "type": "number",
+          "description": "Monetary value of the transaction"
+        },
+        "type": {
+          "type": "string",
+          "description": "Transaction type: expense, income, or transfer",
+          "enum": ["expense", "income", "transfer"],
+          "maxLength": 20
+        },
+        "category": {
+          "type": "string",
+          "description": "Category: Food, Travel, Shopping, Bills, Education, Transfers, Healthcare, Entertainment, Groceries, Rent, Salary, Investment, Other",
+          "maxLength": 50
+        },
+        "date": {
+          "type": "string",
+          "description": "Transaction date formatted as YYYY-MM-DD",
+          "maxLength": 20
+        },
+        "description": {
+          "type": "string",
+          "description": "Brief description or statement narration",
+          "maxLength": 500
+        },
+        "merchant": {
+          "type": "string",
+          "description": "Cleaned merchant or payee name",
+          "maxLength": 150
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method: UPI, Credit Card, Debit Card, Net Banking, Cash, Bank Transfer, Other",
+          "maxLength": 50
+        },
+        "referenceNo": {
+          "type": "string",
+          "description": "Bank reference, UPI UTR, or check reference number",
+          "maxLength": 100
+        },
+        "tags": {
+          "type": "array",
+          "description": "Array of custom labels or tags"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source: manual, bank_import, recurring, ai_rule",
+          "maxLength": 50
+        },
+        "importBatchId": {
+          "type": "string",
+          "description": "Optional ID of bank statement import batch",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation",
+          "maxLength": 35
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update",
+          "maxLength": 35
+        }
+      },
+      "required": ["userId", "amount", "type", "category", "date", "description", "createdAt", "updatedAt"]
+    },
+    "Budget": {
+      "title": "Budget",
+      "description": "Monthly category budget target",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the budget owner",
+          "maxLength": 128
+        },
+        "category": {
+          "type": "string",
+          "description": "Category name",
+          "maxLength": 50
+        },
+        "amount": {
+          "type": "number",
+          "description": "Monthly budgeted limit"
+        },
+        "month": {
+          "type": "number",
+          "description": "Month number 1-12"
+        },
+        "year": {
+          "type": "number",
+          "description": "Year as four digits"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation",
+          "maxLength": 35
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update",
+          "maxLength": 35
+        }
+      },
+      "required": ["userId", "category", "amount", "month", "year", "createdAt", "updatedAt"]
+    },
+    "BankImportBatch": {
+      "title": "BankImportBatch",
+      "description": "History and metadata of an imported bank statement",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the uploader",
+          "maxLength": 128
+        },
+        "fileName": {
+          "type": "string",
+          "description": "Original statement file name",
+          "maxLength": 255
+        },
+        "bankName": {
+          "type": "string",
+          "description": "Selected or detected bank preset name",
+          "maxLength": 100
+        },
+        "importedCount": {
+          "type": "number",
+          "description": "Number of transactions imported"
+        },
+        "duplicatesSkipped": {
+          "type": "number",
+          "description": "Number of duplicates skipped"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "Sum of transaction amounts in batch"
+        },
+        "importedAt": {
+          "type": "string",
+          "description": "ISO timestamp of import batch",
+          "maxLength": 35
+        }
+      },
+      "required": ["userId", "fileName", "importedCount", "importedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile and financial settings indexed by Auth UID"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "All personal transactions indexed by transaction ID"
+    },
+    "/budgets/{budgetId}": {
+      "schema": "Budget",
+      "description": "Monthly category spending budgets"
+    },
+    "/bank_import_batches/{batchId}": {
+      "schema": "BankImportBatch",
+      "description": "Statement upload log and import session metadata"
+    }
+  }
+}

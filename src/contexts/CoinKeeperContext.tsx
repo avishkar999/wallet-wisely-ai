@@ -118,6 +118,11 @@ interface CoinKeeperContextType {
   setShowQuickAddModal: (show: boolean) => void;
   quickAddInitialType: "expense" | "income" | "transfer";
   openQuickAdd: (type?: "expense" | "income" | "transfer") => void;
+  showBankImportModal: boolean;
+  setShowBankImportModal: (show: boolean) => void;
+  openBankImport: () => void;
+  dashboardCategoryFilter: string | null;
+  setDashboardCategoryFilter: (categoryOrTag: string | null) => void;
   showMonthResetModal: boolean;
   setShowMonthResetModal: (show: boolean) => void;
   showMonthlyWrappedModal: boolean;
@@ -293,10 +298,16 @@ export function CoinKeeperProvider({ children }: { children: ReactNode }) {
   const [quickAddInitialType, setQuickAddInitialType] = useState<"expense" | "income" | "transfer">("expense");
   const [showMonthResetModal, setShowMonthResetModal] = useState<boolean>(false);
   const [showMonthlyWrappedModal, setShowMonthlyWrappedModal] = useState<boolean>(false);
+  const [showBankImportModal, setShowBankImportModal] = useState<boolean>(false);
+  const [dashboardCategoryFilter, setDashboardCategoryFilter] = useState<string | null>(null);
 
   const openQuickAdd = (type: "expense" | "income" | "transfer" = "expense") => {
     setQuickAddInitialType(type);
     setShowQuickAddModal(true);
+  };
+
+  const openBankImport = () => {
+    setShowBankImportModal(true);
   };
 
   // Load profile from localStorage with fallback
@@ -776,6 +787,11 @@ export function CoinKeeperProvider({ children }: { children: ReactNode }) {
         setShowQuickAddModal,
         quickAddInitialType,
         openQuickAdd,
+        showBankImportModal,
+        setShowBankImportModal,
+        openBankImport,
+        dashboardCategoryFilter,
+        setDashboardCategoryFilter,
         showMonthResetModal,
         setShowMonthResetModal,
         showMonthlyWrappedModal,
