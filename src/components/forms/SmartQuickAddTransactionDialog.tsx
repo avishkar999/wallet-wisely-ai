@@ -7,11 +7,12 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Sparkles, ArrowRight, Tag, MapPin, Users, Briefcase, Plus } from "lucide-react";
+import { Sparkles, ArrowRight, Tag, MapPin, Users, Briefcase, Plus, Scan, Edit3 } from "lucide-react";
 import { useCoinKeeper, ExpenseClassification } from "@/contexts/CoinKeeperContext";
 import { useAddTransaction } from "@/hooks/useTransactions";
 import { useAccounts } from "@/hooks/useAccounts";
 import { useToast } from "@/hooks/use-toast";
+import { ReceiptOCRScanner } from "@/components/receipt/ReceiptOCRScanner";
 
 // Keyword category matcher
 const SMART_KEYWORDS: Record<string, { category: string; type: ExpenseClassification }> = {
@@ -56,6 +57,7 @@ export function SmartQuickAddTransactionDialog() {
   const { toast } = useToast();
 
   const [type, setType] = useState<"expense" | "income" | "transfer">("expense");
+  const [entryMode, setEntryMode] = useState<"manual" | "scan">("manual");
   const [amount, setAmount] = useState("");
 
   // Sync initial type when opened
@@ -157,7 +159,40 @@ export function SmartQuickAddTransactionDialog() {
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 my-2">
+        {/* Mode Selector: Manual vs Scan Screenshot */}
+        <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-secondary/60 border border-border/50 text-xs my-1">
+          <button
+            type="button"
+            onClick={() => setEntryMode("manual")}
+            className={`py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 ${
+              entryMode === "manual"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Edit3 className="w-3.5 h-3.5 text-primary" />
+            Manual Entry
+          </button>
+          <button
+            type="button"
+            onClick={() => setEntryMode("scan")}
+            className={`py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 ${
+              entryMode === "scan"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Scan className="w-3.5 h-3.5 text-primary" />
+            Gemini Receipt OCR
+          </button>
+        </div>
+
+        {entryMode === "scan" ? (
+          <div className="my-2">
+            <ReceiptOCRScanner onTransactionSaved={() => setShowQuickAddModal(false)} />
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4 my-2">
           {/* Expense / Income / Transfer Segmented Control */}
           <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-secondary/60 border border-border/50">
             <button
@@ -398,6 +433,7 @@ export function SmartQuickAddTransactionDialog() {
             </Button>
           </div>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );

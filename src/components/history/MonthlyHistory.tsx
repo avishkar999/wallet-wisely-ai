@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useMonthlySummaries, MonthlySummary } from "@/hooks/useMonthlySummaries";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MonthlyFinancialReport } from "@/components/analytics/MonthlyFinancialReport";
 
 const fmt = (n: number) =>
   `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
@@ -160,15 +161,18 @@ export function MonthlyHistory() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4">
-      <div className="flex items-center gap-3">
+    <div className="max-w-5xl mx-auto space-y-6">
+      {/* 6-Month Income vs Expenses Financial Report */}
+      <MonthlyFinancialReport />
+
+      <div className="flex items-center gap-3 pt-4 border-t border-border/40">
         <div className="w-10 h-10 rounded-xl bg-accent/15 flex items-center justify-center">
           <Archive className="w-5 h-5 text-accent" />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-foreground">Monthly History</h2>
+          <h2 className="text-base font-semibold text-foreground">Archived Monthly Cycles</h2>
           <p className="text-xs text-muted-foreground">
-            Completed months are archived automatically — nothing is ever deleted.
+            Completed historical monthly balances and category records.
           </p>
         </div>
       </div>

@@ -28,8 +28,9 @@ import {
 import { SpendingForecast } from "./SpendingForecast";
 import { BudgetVsActualChart } from "./BudgetVsActualChart";
 import { SpendingTrendsLineChart } from "./SpendingTrendsLineChart";
+import { MonthlyFinancialReport } from "./MonthlyFinancialReport";
 import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
-import { Sparkles, Plus } from "lucide-react";
+import { Sparkles, Plus, FileText } from "lucide-react";
 
 const categoryLabels: Record<string, string> = {
   food: "Food & Dining",
@@ -242,21 +243,29 @@ export function SpendingAnalytics() {
       </div>
 
       {/* Tabs for different views */}
-      <Tabs defaultValue="trends" className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="trends" className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4" />
+      <Tabs defaultValue="report" className="space-y-6">
+        <TabsList className="grid w-full max-w-lg grid-cols-4">
+          <TabsTrigger value="report" className="flex items-center gap-1.5 text-xs">
+            <FileText className="w-3.5 h-3.5 text-primary" />
+            Report
+          </TabsTrigger>
+          <TabsTrigger value="trends" className="flex items-center gap-1.5 text-xs">
+            <BarChart3 className="w-3.5 h-3.5" />
             Trends
           </TabsTrigger>
-          <TabsTrigger value="forecast" className="flex items-center gap-2">
-            <Lightbulb className="w-4 h-4" />
+          <TabsTrigger value="forecast" className="flex items-center gap-1.5 text-xs">
+            <Lightbulb className="w-3.5 h-3.5" />
             Forecast
           </TabsTrigger>
-          <TabsTrigger value="budget" className="flex items-center gap-2">
-            <Target className="w-4 h-4" />
+          <TabsTrigger value="budget" className="flex items-center gap-1.5 text-xs">
+            <Target className="w-3.5 h-3.5" />
             Budget
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="report" className="space-y-6">
+          <MonthlyFinancialReport />
+        </TabsContent>
 
         <TabsContent value="trends" className="space-y-6">
           {/* 6-Month Spending Trends Recharts Card */}

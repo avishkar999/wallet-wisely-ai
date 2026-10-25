@@ -16,14 +16,16 @@ import { SettingsPage } from "@/pages/Settings";
 import { CalendarPage } from "@/pages/Calendar";
 import { DailySpendingTracker } from "@/components/tracker/DailySpendingTracker";
 import { BudgetManager } from "@/components/budget/BudgetManager";
+import { BudgetOverview } from "@/components/budget/BudgetOverview";
 import { TransactionsHistory } from "@/components/transactions/TransactionsHistory";
 import { SpendingAnalytics } from "@/components/analytics/SpendingAnalytics";
 import { GoalTracker } from "@/components/goals/GoalTracker";
 import { RentalManager } from "@/components/rentals/RentalManager";
-import { Bell, Search, Menu, Sparkles, Sliders, Plus, User, Layers, Wallet, CreditCard, UploadCloud } from "lucide-react";
+import { Bell, Search, Menu, Sparkles, Sliders, Plus, User, Layers, Wallet, CreditCard, UploadCloud, Target, Scan } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMonthlyReset } from "@/hooks/useMonthlyReset";
 import { useMonthlyArchive } from "@/hooks/useMonthlySummaries";
@@ -70,6 +72,7 @@ const Index = () => {
   } = useCoinKeeper();
 
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [budgetSubTab, setBudgetSubTab] = useState<"overview" | "rules">("overview");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
@@ -121,7 +124,41 @@ const Index = () => {
       case "tracker":
         return <DailySpendingTracker />;
       case "budget":
-        return <BudgetManager />;
+        return (
+          <div className="space-y-6 max-w-6xl mx-auto">
+            <div className="flex items-center justify-between border-b border-border/40 pb-3">
+              <div className="flex items-center gap-1.5 bg-secondary/50 p-1 rounded-xl border border-border/50 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setBudgetSubTab("overview")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5",
+                    budgetSubTab === "overview"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Target className="w-3.5 h-3.5 text-primary" />
+                  Budget Overview (Firestore)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBudgetSubTab("rules")}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg font-medium transition-all flex items-center gap-1.5",
+                    budgetSubTab === "rules"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  Category Rules & Rollovers
+                </button>
+              </div>
+            </div>
+            {budgetSubTab === "overview" ? <BudgetOverview /> : <BudgetManager />}
+          </div>
+        );
       case "goals":
         return <GoalTracker />;
       case "history":
@@ -261,6 +298,18 @@ const Index = () => {
                 title="Import Bank Statement (CSV or Excel)"
               >
                 <UploadCloud className="w-3.5 h-3.5 text-primary" /> Import
+              </Button>
+
+              {/* Scan Receipt Button */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowQuickAddModal(true)}
+                className="hidden lg:flex text-xs h-8 gap-1.5 border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                title="Scan Receipt or UPI Screenshot (Gemini OCR)"
+              >
+                <Scan className="w-3.5 h-3.5 text-primary" /> Scan Receipt
               </Button>
 
               {/* Quick Add Button */}

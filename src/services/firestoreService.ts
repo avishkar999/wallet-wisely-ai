@@ -139,6 +139,31 @@ export async function fetchUserTransactions(userId: string): Promise<FirestoreTr
   }
 }
 
+// 1b. Realtime Transactions Subscription
+export function subscribeUserTransactions(
+  userId: string,
+  onUpdate: (transactions: FirestoreTransaction[]) => void,
+  onError?: (error: unknown) => void
+): () => void {
+  const path = "transactions";
+  const q = query(collection(db, "transactions"), where("userId", "==", userId));
+  return onSnapshot(
+    q,
+    (querySnapshot) => {
+      const list: FirestoreTransaction[] = [];
+      querySnapshot.forEach((docSnap) => {
+        list.push(docSnap.data() as FirestoreTransaction);
+      });
+      onUpdate(list);
+    },
+    (error) => {
+      console.error("Firestore transactions subscription error:", error);
+      if (onError) onError(error);
+      else handleFirestoreError(error, OperationType.LIST, path);
+    }
+  );
+}
+
 // 2. User Profile Service
 export async function syncUserProfile(profile: FirestoreUserProfile): Promise<void> {
   const path = `users/${profile.userId}`;
@@ -160,3 +185,78 @@ export async function upsertBudget(budget: FirestoreBudget): Promise<void> {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
 }
+
+export async function deleteBudget(budgetId: string): Promise<void> {
+  const path = `budgets/${budgetId}`;
+  try {
+    const docRef = doc(db, "budgets", budgetId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+export async function fetchUserBudgets(
+  userId: string,
+  month?: number,
+  year?: number
+): Promise<FirestoreBudget[]> {
+  const path = "budgets";
+  try {
+    const q = query(collection(db, "budgets"), where("userId", "==", userId));
+    const querySnapshot = await getDocs(q);
+    const list: FirestoreBudget[] = [];
+    querySnapshot.forEach((docSnap) => {
+      const b = docSnap.data() as FirestoreBudget;
+      if (month !== undefined && year !== undefined) {
+        if (b.month === month && b.year === year) {
+          list.push(b);
+        }
+      } else {
+        list.push(b);
+      }
+    });
+    return list;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, path);
+  }
+}
+
+export function subscribeUserBudgets(
+  userId: string,
+  onUpdate: (budgets: FirestoreBudget[]) => void,
+  onError?: (error: unknown) => void
+): () => void {
+  const path = "budgets";
+  const q = query(collection(db, "budgets"), where("userId", "==", userId));
+  return onSnapshot(
+    q,
+    (querySnapshot) => {
+      const list: FirestoreBudget[] = [];
+      querySnapshot.forEach((docSnap) => {
+        list.push(docSnap.data() as FirestoreBudget);
+      });
+      onUpdate(list);
+    },
+    (error) => {
+      console.error("Firestore budgets subscription error:", error);
+      if (onError) onError(error);
+      else handleFirestoreError(error, OperationType.LIST, path);
+    }
+  );
+}
+
+export async function batchUpsertBudgets(budgets: FirestoreBudget[]): Promise<void> {
+  const path = "budgets";
+  try {
+    const batch = writeBatch(db);
+    for (const b of budgets) {
+      const docRef = doc(db, "budgets", b.id);
+      batch.set(docRef, b, { merge: true });
+    }
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+

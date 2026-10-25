@@ -2,5 +2,5 @@
   "name": "Wallet Wisely",
   "description": "CoinKeeper: Personal finance operating system that adapts to the user's financial life, lifestyle, and priorities.",
   "permissions": [],
-  "capabilities": []
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

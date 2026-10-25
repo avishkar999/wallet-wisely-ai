@@ -105,7 +105,7 @@ export function AIAdvisorChat() {
   };
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -114,25 +114,105 @@ export function AIAdvisorChat() {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
     const currentInput = input;
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput("");
     setIsTyping(true);
 
-    // Simulate AI thinking time
-    setTimeout(() => {
-      const response = generateResponse(currentInput);
-      
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: response,
-        timestamp: new Date(),
-      };
+    const aiMessageId = (Date.now() + 1).toString();
 
-      setMessages((prev) => [...prev, aiMessage]);
+    try {
+      const response = await fetch("/api/ai-advisor/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: updatedMessages.map((m) => ({
+            role: m.role,
+            content: m.content,
+          })),
+          financialContext: {
+            income: totalIncome,
+            expenses: totalExpenses,
+            balance: totalIncome - totalExpenses,
+            savingsRate,
+            totalDebt,
+            totalInvestments: totalValue,
+            categoryBreakdown: byCategory,
+            currency: "INR",
+            persona: "salaried",
+          },
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error("Stream response error");
+      }
+
       setIsTyping(false);
-    }, 1000);
+
+      // Create initial empty assistant message
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: aiMessageId,
+          role: "assistant",
+          content: "",
+          timestamp: new Date(),
+        },
+      ]);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let accumulated = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const dataStr = line.slice(6).trim();
+            if (dataStr === "[DONE]") {
+              break;
+            }
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.text) {
+                accumulated += parsed.text;
+                setMessages((prev) =>
+                  prev.map((m) =>
+                    m.id === aiMessageId ? { ...m, content: accumulated } : m
+                  )
+                );
+              }
+            } catch {
+              // Ignore partial JSON chunks
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Streaming error, falling back to local reasoning:", err);
+      const fallbackResponse = generateResponse(currentInput);
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== aiMessageId);
+        return [
+          ...filtered,
+          {
+            id: aiMessageId,
+            role: "assistant",
+            content: fallbackResponse,
+            timestamp: new Date(),
+          },
+        ];
+      });
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const handleQuestionClick = (question: string) => {
