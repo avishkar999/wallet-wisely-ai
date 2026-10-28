@@ -146,6 +146,10 @@ export function subscribeUserTransactions(
   onError?: (error: unknown) => void
 ): () => void {
   const path = "transactions";
+  // Only attach onSnapshot listeners if auth is ready and user is authenticated in Firebase
+  if (!auth.currentUser || auth.currentUser.uid !== userId) {
+    return () => {};
+  }
   const q = query(collection(db, "transactions"), where("userId", "==", userId));
   return onSnapshot(
     q,
@@ -157,7 +161,6 @@ export function subscribeUserTransactions(
       onUpdate(list);
     },
     (error) => {
-      console.error("Firestore transactions subscription error:", error);
       if (onError) onError(error);
       else handleFirestoreError(error, OperationType.LIST, path);
     }
@@ -228,6 +231,10 @@ export function subscribeUserBudgets(
   onError?: (error: unknown) => void
 ): () => void {
   const path = "budgets";
+  // Only attach onSnapshot listeners if auth is ready and user is authenticated in Firebase
+  if (!auth.currentUser || auth.currentUser.uid !== userId) {
+    return () => {};
+  }
   const q = query(collection(db, "budgets"), where("userId", "==", userId));
   return onSnapshot(
     q,
@@ -239,7 +246,6 @@ export function subscribeUserBudgets(
       onUpdate(list);
     },
     (error) => {
-      console.error("Firestore budgets subscription error:", error);
       if (onError) onError(error);
       else handleFirestoreError(error, OperationType.LIST, path);
     }

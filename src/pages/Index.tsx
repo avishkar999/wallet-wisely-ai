@@ -21,7 +21,7 @@ import { TransactionsHistory } from "@/components/transactions/TransactionsHisto
 import { SpendingAnalytics } from "@/components/analytics/SpendingAnalytics";
 import { GoalTracker } from "@/components/goals/GoalTracker";
 import { RentalManager } from "@/components/rentals/RentalManager";
-import { Bell, Search, Menu, Sparkles, Sliders, Plus, User, Layers, Wallet, CreditCard, UploadCloud, Target, Scan } from "lucide-react";
+import { Bell, Search, Menu, Sparkles, Sliders, Plus, User, Layers, Wallet, CreditCard, UploadCloud, Target, Scan, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -48,11 +48,14 @@ import { CashFlowModule } from "@/components/dashboard/CashFlowModule";
 import { NetWorthModule } from "@/components/dashboard/NetWorthModule";
 import { PersonalFinancialRulesCard } from "@/components/dashboard/PersonalFinancialRulesCard";
 import { SubscriptionImpactCard } from "@/components/dashboard/SubscriptionImpactCard";
+import { SubscriptionManager } from "@/components/subscriptions/SubscriptionManager";
 import { SmartQuickAddTransactionDialog } from "@/components/forms/SmartQuickAddTransactionDialog";
 import { PersonalizationOnboarding } from "@/components/onboarding/PersonalizationOnboarding";
 import { CategoryManagerDialog } from "@/components/categories/CategoryManagerDialog";
 import { BankImportModal } from "@/components/import/BankImportModal";
 import { TransactionCategorizerBar } from "@/components/categorizer/TransactionCategorizerBar";
+import { ExportDataDialog } from "@/components/export/ExportDataDialog";
+import { MainDashboardLayout } from "@/components/dashboard/MainDashboardLayout";
 
 const Index = () => {
   // Monthly cycles handling
@@ -69,6 +72,10 @@ const Index = () => {
     setShowQuickAddModal,
     showBankImportModal,
     setShowBankImportModal,
+    showExportModal,
+    setShowExportModal,
+    exportInitialTab,
+    openExportModal,
   } = useCoinKeeper();
 
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -116,11 +123,7 @@ const Index = () => {
           </div>
         );
       case "subscriptions":
-        return (
-          <div className="space-y-6 max-w-6xl mx-auto">
-            <SubscriptionImpactCard />
-          </div>
-        );
+        return <SubscriptionManager />;
       case "tracker":
         return <DailySpendingTracker />;
       case "budget":
@@ -183,8 +186,9 @@ const Index = () => {
         return <AIAdvisorChat />;
       case "settings":
         return <SettingsPage />;
+      case "dashboard":
       default:
-        return <AdaptiveDashboard onNavigateTab={handleTabChange} />;
+        return <MainDashboardLayout onNavigateTab={handleTabChange} />;
     }
   };
 
@@ -300,6 +304,18 @@ const Index = () => {
                 <UploadCloud className="w-3.5 h-3.5 text-primary" /> Import
               </Button>
 
+              {/* Export Data Button */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => openExportModal("transactions")}
+                className="hidden md:flex text-xs h-8 gap-1.5 border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
+                title="Export Transaction History & Budget Reports to CSV"
+              >
+                <Download className="w-3.5 h-3.5 text-primary" /> Export
+              </Button>
+
               {/* Scan Receipt Button */}
               <Button
                 type="button"
@@ -366,6 +382,11 @@ const Index = () => {
       <BankImportModal
         open={showBankImportModal}
         onOpenChange={setShowBankImportModal}
+      />
+      <ExportDataDialog
+        open={showExportModal}
+        onOpenChange={setShowExportModal}
+        defaultTab={exportInitialTab}
       />
     </div>
   );

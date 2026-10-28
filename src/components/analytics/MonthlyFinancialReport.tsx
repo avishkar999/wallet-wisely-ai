@@ -66,7 +66,7 @@ interface MonthDataPoint {
 
 export function MonthlyFinancialReport({ className = "" }: { className?: string }) {
   const { data: rawTransactions = [], isLoading } = useTransactions();
-  const { profile } = useCoinKeeper();
+  const { profile, openExportModal } = useCoinKeeper();
 
   const [viewType, setViewType] = useState<"composed" | "area" | "rate">("composed");
   const [showAIBrief, setShowAIBrief] = useState(false);
@@ -398,15 +398,15 @@ Provide a concise 3-part executive summary:
             AI Executive Brief
           </Button>
 
-          {/* Quick Print/Export */}
+          {/* Export CSV / Print Button */}
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            onClick={() => window.print()}
+            onClick={() => openExportModal("trends")}
             className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground hidden sm:flex"
-            title="Print or Save Report as PDF"
+            title="Export 6-Month Trends and Transactions to CSV"
           >
-            <Download className="w-3.5 h-3.5" /> Export
+            <Download className="w-3.5 h-3.5 text-primary" /> Export CSV
           </Button>
         </div>
       </div>

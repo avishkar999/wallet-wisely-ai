@@ -62,7 +62,7 @@ const categories = Constants.public.Enums.transaction_category;
 export function TransactionsHistory() {
   const { data: transactions = [], isLoading } = useTransactions();
   const { toast } = useToast();
-  const { openBankImport, dashboardCategoryFilter, setDashboardCategoryFilter } = useCoinKeeper();
+  const { openBankImport, openExportModal, dashboardCategoryFilter, setDashboardCategoryFilter } = useCoinKeeper();
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -253,9 +253,15 @@ export function TransactionsHistory() {
                 <UploadCloud className="w-3.5 h-3.5" />
                 Import Statement
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExportCSV} className="text-xs h-8">
-                <Download className="w-3.5 h-3.5 mr-1.5" />
-                CSV
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => openExportModal("transactions")}
+                className="text-xs h-8"
+                title="Configure and download CSV spreadsheet"
+              >
+                <Download className="w-3.5 h-3.5 mr-1.5 text-primary" />
+                Export CSV
               </Button>
               <Button variant="outline" size="sm" onClick={handleExportExcel} className="text-xs h-8">
                 <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />

@@ -1,4 +1,5 @@
-import express, { Request, Response } from "express";
+import express from "express";
+import type { Request, Response } from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
@@ -406,7 +407,7 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     app.use(express.static(path.resolve(__dirname, "dist")));
-    app.get("*", (_req, res) => {
+    app.use((_req: Request, res: Response) => {
       res.sendFile(path.resolve(__dirname, "dist", "index.html"));
     });
   }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import {
   FirestoreBudget,
   FirestoreTransaction,
@@ -37,34 +38,56 @@ export const STANDARD_CATEGORIES = [
   { key: "other", label: "Personal & Other", defaultPercent: 4, color: "text-zinc-500", bg: "bg-zinc-500/10" },
 ];
 
+const getSandboxDefaultBudgets = (month: number, year: number): FirestoreBudget[] => [
+  { id: `demo_1`, userId: "sandbox", category: "housing", amount: 20000, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: `demo_2`, userId: "sandbox", category: "food", amount: 12000, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: `demo_3`, userId: "sandbox", category: "transport", amount: 6000, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: `demo_4`, userId: "sandbox", category: "bills", amount: 4500, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: `demo_5`, userId: "sandbox", category: "shopping", amount: 7000, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: `demo_6`, userId: "sandbox", category: "entertainment", amount: 4000, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+];
+
+const getSandboxDefaultTransactions = (month: number, year: number): FirestoreTransaction[] => [
+  { id: "demo_tx_1", userId: "sandbox", amount: 65000, type: "income", category: "income", date: `${year}-${String(month).padStart(2, '0')}-02`, description: "Monthly Salary Credit", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: "demo_tx_2", userId: "sandbox", amount: 20000, type: "expense", category: "housing", date: `${year}-${String(month).padStart(2, '0')}-05`, description: "Apartment Rent", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: "demo_tx_3", userId: "sandbox", amount: 9400, type: "expense", category: "food", date: `${year}-${String(month).padStart(2, '0')}-12`, description: "Weekly Grocery & Supermarket", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: "demo_tx_4", userId: "sandbox", amount: 4200, type: "expense", category: "transport", date: `${year}-${String(month).padStart(2, '0')}-14`, description: "Fuel & Metro Card", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: "demo_tx_5", userId: "sandbox", amount: 4300, type: "expense", category: "bills", date: `${year}-${String(month).padStart(2, '0')}-18`, description: "Electricity & Fiber Internet", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: "demo_tx_6", userId: "demo", amount: 6850, type: "expense", category: "shopping", date: `${year}-${String(month).padStart(2, '0')}-20`, description: "Clothing & Home Essentials", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: "demo_tx_7", userId: "demo", amount: 4600, type: "expense", category: "entertainment", date: `${year}-${String(month).padStart(2, '0')}-22`, description: "Concert Tickets & Dinner", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+];
+
 export function useFirestoreBudgets(month: number, year: number) {
-  const { user } = useAuth();
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(() => auth.currentUser);
   const [budgets, setBudgets] = useState<FirestoreBudget[]>([]);
   const [transactions, setTransactions] = useState<FirestoreTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Firestore Real-time subscriptions
+  // 1. Listen directly to Firebase Auth readiness & state
   useEffect(() => {
-    if (!user?.id) {
-      // Demo fallback when not authenticated
-      setBudgets([
-        { id: `demo_1`, userId: "demo", category: "housing", amount: 20000, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: `demo_2`, userId: "demo", category: "food", amount: 12000, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: `demo_3`, userId: "demo", category: "transport", amount: 6000, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: `demo_4`, userId: "demo", category: "bills", amount: 4500, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: `demo_5`, userId: "demo", category: "shopping", amount: 7000, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: `demo_6`, userId: "demo", category: "entertainment", amount: 4000, month, year, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      ]);
-      setTransactions([
-        { id: "demo_tx_1", userId: "demo", amount: 65000, type: "income", category: "income", date: `${year}-${String(month).padStart(2, '0')}-02`, description: "Monthly Salary Credit", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: "demo_tx_2", userId: "demo", amount: 20000, type: "expense", category: "housing", date: `${year}-${String(month).padStart(2, '0')}-05`, description: "Apartment Rent", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: "demo_tx_3", userId: "demo", amount: 9400, type: "expense", category: "food", date: `${year}-${String(month).padStart(2, '0')}-12`, description: "Weekly Grocery & Supermarket", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: "demo_tx_4", userId: "demo", amount: 4200, type: "expense", category: "transport", date: `${year}-${String(month).padStart(2, '0')}-14`, description: "Fuel & Metro Card", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: "demo_tx_5", userId: "demo", amount: 4300, type: "expense", category: "bills", date: `${year}-${String(month).padStart(2, '0')}-18`, description: "Electricity & Fiber Internet", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: "demo_tx_6", userId: "demo", amount: 6850, type: "expense", category: "shopping", date: `${year}-${String(month).padStart(2, '0')}-20`, description: "Clothing & Home Essentials", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-        { id: "demo_tx_7", userId: "demo", amount: 4600, type: "expense", category: "entertainment", date: `${year}-${String(month).padStart(2, '0')}-22`, description: "Concert Tickets & Dinner", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      ]);
+    const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
+      setFirebaseUser(fbUser);
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  // 2. Data Fetching Constraint: Only attach onSnapshot listeners if auth is ready and user is authenticated
+  useEffect(() => {
+    if (!firebaseUser) {
+      // Guest Sandbox mode: load local sandbox data without querying Firestore unauthenticated
+      const storageKey = `coinkeeper_sandbox_budgets_${year}_${month}`;
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+          setBudgets(JSON.parse(saved));
+        } else {
+          setBudgets(getSandboxDefaultBudgets(month, year));
+        }
+      } catch {
+        setBudgets(getSandboxDefaultBudgets(month, year));
+      }
+      setTransactions(getSandboxDefaultTransactions(month, year));
       setLoading(false);
       return;
     }
@@ -72,7 +95,7 @@ export function useFirestoreBudgets(month: number, year: number) {
     setLoading(true);
 
     const unsubBudgets = subscribeUserBudgets(
-      user.id,
+      firebaseUser.uid,
       (allBudgets) => {
         // Filter for active month & year
         const currentBudgets = allBudgets.filter((b) => b.month === month && b.year === year);
@@ -86,7 +109,7 @@ export function useFirestoreBudgets(month: number, year: number) {
     );
 
     const unsubTx = subscribeUserTransactions(
-      user.id,
+      firebaseUser.uid,
       (allTx) => {
         // Filter transactions for active month & year
         const monthPrefix = `${year}-${String(month).padStart(2, "0")}`;
@@ -105,7 +128,7 @@ export function useFirestoreBudgets(month: number, year: number) {
       unsubBudgets();
       unsubTx();
     };
-  }, [user?.id, month, year]);
+  }, [firebaseUser, month, year]);
 
   // Aggregate financial metrics
   const summary = useMemo(() => {
@@ -185,8 +208,8 @@ export function useFirestoreBudgets(month: number, year: number) {
 
         categoryBreakdown.push({
           id: b.id,
-          category: catKey,
-          label: b.category,
+          category: b.category,
+          label: b.category.charAt(0).toUpperCase() + b.category.slice(1),
           budgeted,
           spent,
           remaining,
@@ -198,15 +221,29 @@ export function useFirestoreBudgets(month: number, year: number) {
     });
 
     const netSavings = income - expenses;
-    const savingsRate = income > 0 ? Math.max(-100, Math.min(100, Math.round((netSavings / income) * 100))) : 0;
-    const overallUtilization = totalBudgeted > 0 ? Math.round((expenses / totalBudgeted) * 100) : 0;
+    const savingsRate = income > 0 ? Math.round((netSavings / income) * 100) : 0;
     const budgetRemaining = totalBudgeted - expenses;
+    const overallUtilization = totalBudgeted > 0 ? Math.round((expenses / totalBudgeted) * 100) : 0;
+
+    let overallPacing: "under_budget" | "on_track" | "warning" | "over_budget" = "on_track";
+    if (totalBudgeted > 0) {
+      if (expenses > totalBudgeted) overallPacing = "over_budget";
+      else if (overallUtilization >= 90) overallPacing = "warning";
+      else if (overallUtilization <= 70) overallPacing = "under_budget";
+    }
+
+    let budgetHealth = "Balanced";
+    if (overallPacing === "over_budget") budgetHealth = "Critical";
+    else if (overallPacing === "warning") budgetHealth = "Attention";
+    else if (savingsRate >= 20) budgetHealth = "Healthy";
 
     return {
       income,
       expenses,
       netSavings,
       savingsRate,
+      overallPacing,
+      budgetHealth,
       totalBudgeted,
       totalBudgetSpent: expenses,
       budgetRemaining,
@@ -217,29 +254,64 @@ export function useFirestoreBudgets(month: number, year: number) {
     };
   }, [budgets, transactions]);
 
-  // Helper to save or update budget in Firestore
+  // Helper to save or update budget
   const saveCategoryBudget = useCallback(
     async (category: string, amount: number) => {
-      if (!user?.id) {
-        toast.info("Please sign in with Google to sync your budgets to Firestore.");
+      const catKey = category.toLowerCase().trim();
+      const roundedAmt = Math.max(0, Math.round(amount));
+
+      // Guest Sandbox mode when not authenticated with Firebase
+      if (!firebaseUser) {
+        setBudgets((prev) => {
+          const existing = prev.find((b) => b.category.toLowerCase() === catKey);
+          let next: FirestoreBudget[];
+          if (existing) {
+            next = prev.map((b) =>
+              b.category.toLowerCase() === catKey ? { ...b, amount: roundedAmt } : b
+            );
+          } else {
+            next = [
+              ...prev,
+              {
+                id: `local_${Date.now()}_${catKey}`,
+                userId: "sandbox",
+                category: catKey,
+                amount: roundedAmt,
+                month,
+                year,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+            ];
+          }
+          try {
+            localStorage.setItem(
+              `coinkeeper_sandbox_budgets_${year}_${month}`,
+              JSON.stringify(next)
+            );
+          } catch (e) {
+            console.debug("Local storage write failed:", e);
+          }
+          return next;
+        });
+        toast.success(`Updated budget for ${category} (Sandbox mode)`);
         return;
       }
 
       setSaving(true);
       try {
-        const catKey = category.toLowerCase().trim();
         // Deterministic sanitized ID complying with isValidId: ^[a-zA-Z0-9_\-]+$
         const sanitizedCat = catKey.replace(/[^a-zA-Z0-9]/g, "_");
-        const docId = `b_${user.id.slice(0, 16)}_${year}_${month}_${sanitizedCat}`;
+        const docId = `b_${firebaseUser.uid.slice(0, 16)}_${year}_${month}_${sanitizedCat}`;
 
         const existing = budgets.find((b) => b.category.toLowerCase() === catKey);
         const nowIso = new Date().toISOString();
 
         const budgetRecord: FirestoreBudget = {
           id: existing?.id || docId,
-          userId: user.id,
+          userId: firebaseUser.uid,
           category: catKey,
-          amount: Math.max(0, Math.round(amount)),
+          amount: roundedAmt,
           month,
           year,
           createdAt: existing?.createdAt || nowIso,
@@ -255,16 +327,29 @@ export function useFirestoreBudgets(month: number, year: number) {
         setSaving(false);
       }
     },
-    [user?.id, month, year, budgets]
+    [firebaseUser, month, year, budgets]
   );
 
-  // Helper to delete budget from Firestore
+  // Helper to delete budget
   const removeCategoryBudget = useCallback(
     async (budgetId: string) => {
-      if (!user?.id) {
-        toast.info("Please sign in with Google to manage Firestore budgets.");
+      if (!firebaseUser) {
+        setBudgets((prev) => {
+          const next = prev.filter((b) => b.id !== budgetId);
+          try {
+            localStorage.setItem(
+              `coinkeeper_sandbox_budgets_${year}_${month}`,
+              JSON.stringify(next)
+            );
+          } catch (e) {
+            console.debug("Local storage write failed:", e);
+          }
+          return next;
+        });
+        toast.success("Budget removed (Sandbox mode)");
         return;
       }
+
       try {
         await deleteBudget(budgetId);
         toast.success("Budget removed");
@@ -273,23 +358,51 @@ export function useFirestoreBudgets(month: number, year: number) {
         toast.error("Failed to remove budget.");
       }
     },
-    [user?.id]
+    [firebaseUser, month, year]
   );
 
   // Apply template (e.g., 50/30/20 standard)
   const applyTemplate = useCallback(
     async (templateType: "50-30-20" | "balanced" | "frugal", baseIncome: number) => {
-      if (!user?.id) {
-        toast.info("Please sign in with Google to save templates to Firestore.");
+      const incomeToUse = baseIncome > 0 ? baseIncome : 50000;
+      const nowIso = new Date().toISOString();
+
+      if (!firebaseUser) {
+        const localBudgets: FirestoreBudget[] = STANDARD_CATEGORIES.map((cfg) => {
+          let pct = cfg.defaultPercent;
+          if (templateType === "frugal") {
+            if (cfg.key === "shopping" || cfg.key === "entertainment") pct = Math.max(2, pct - 4);
+            if (cfg.key === "food") pct = 12;
+          }
+          const targetAmount = Math.round((incomeToUse * pct) / 100);
+          return {
+            id: `local_${cfg.key}`,
+            userId: "sandbox",
+            category: cfg.key,
+            amount: targetAmount,
+            month,
+            year,
+            createdAt: nowIso,
+            updatedAt: nowIso,
+          };
+        });
+
+        setBudgets(localBudgets);
+        try {
+          localStorage.setItem(
+            `coinkeeper_sandbox_budgets_${year}_${month}`,
+            JSON.stringify(localBudgets)
+          );
+        } catch (e) {
+          console.debug("Local storage write failed:", e);
+        }
+        toast.success(`Applied ${templateType.toUpperCase()} budget framework (Sandbox mode)!`);
         return;
       }
 
-      const incomeToUse = baseIncome > 0 ? baseIncome : 50000;
       setSaving(true);
-
       try {
         const batchBudgets: FirestoreBudget[] = [];
-        const nowIso = new Date().toISOString();
 
         STANDARD_CATEGORIES.forEach((cfg) => {
           let pct = cfg.defaultPercent;
@@ -300,12 +413,12 @@ export function useFirestoreBudgets(month: number, year: number) {
 
           const targetAmount = Math.round((incomeToUse * pct) / 100);
           const sanitizedCat = cfg.key.replace(/[^a-zA-Z0-9]/g, "_");
-          const docId = `b_${user.id.slice(0, 16)}_${year}_${month}_${sanitizedCat}`;
+          const docId = `b_${firebaseUser.uid.slice(0, 16)}_${year}_${month}_${sanitizedCat}`;
           const existing = budgets.find((b) => b.category.toLowerCase() === cfg.key);
 
           batchBudgets.push({
             id: existing?.id || docId,
-            userId: user.id,
+            userId: firebaseUser.uid,
             category: cfg.key,
             amount: targetAmount,
             month,
@@ -324,7 +437,7 @@ export function useFirestoreBudgets(month: number, year: number) {
         setSaving(false);
       }
     },
-    [user?.id, month, year, budgets]
+    [firebaseUser, month, year, budgets]
   );
 
   return {
@@ -336,6 +449,6 @@ export function useFirestoreBudgets(month: number, year: number) {
     saveCategoryBudget,
     removeCategoryBudget,
     applyTemplate,
-    isAuthenticated: !!user?.id,
+    isAuthenticated: Boolean(firebaseUser),
   };
 }

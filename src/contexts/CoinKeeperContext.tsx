@@ -127,6 +127,10 @@ interface CoinKeeperContextType {
   setShowMonthResetModal: (show: boolean) => void;
   showMonthlyWrappedModal: boolean;
   setShowMonthlyWrappedModal: (show: boolean) => void;
+  showExportModal: boolean;
+  setShowExportModal: (show: boolean) => void;
+  exportInitialTab: "transactions" | "budgets" | "trends";
+  openExportModal: (tab?: "transactions" | "budgets" | "trends") => void;
   resetToPersonaPresets: (persona: PersonaType) => void;
 }
 
@@ -300,6 +304,8 @@ export function CoinKeeperProvider({ children }: { children: ReactNode }) {
   const [showMonthlyWrappedModal, setShowMonthlyWrappedModal] = useState<boolean>(false);
   const [showBankImportModal, setShowBankImportModal] = useState<boolean>(false);
   const [dashboardCategoryFilter, setDashboardCategoryFilter] = useState<string | null>(null);
+  const [showExportModal, setShowExportModal] = useState<boolean>(false);
+  const [exportInitialTab, setExportInitialTab] = useState<"transactions" | "budgets" | "trends">("transactions");
 
   const openQuickAdd = (type: "expense" | "income" | "transfer" = "expense") => {
     setQuickAddInitialType(type);
@@ -308,6 +314,11 @@ export function CoinKeeperProvider({ children }: { children: ReactNode }) {
 
   const openBankImport = () => {
     setShowBankImportModal(true);
+  };
+
+  const openExportModal = (tab: "transactions" | "budgets" | "trends" = "transactions") => {
+    setExportInitialTab(tab);
+    setShowExportModal(true);
   };
 
   // Load profile from localStorage with fallback
@@ -796,6 +807,10 @@ export function CoinKeeperProvider({ children }: { children: ReactNode }) {
         setShowMonthResetModal,
         showMonthlyWrappedModal,
         setShowMonthlyWrappedModal,
+        showExportModal,
+        setShowExportModal,
+        exportInitialTab,
+        openExportModal,
         resetToPersonaPresets,
       }}
     >

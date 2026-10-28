@@ -33,6 +33,8 @@ import {
   DollarSign,
   SlidersHorizontal,
   ExternalLink,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -57,6 +59,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useFirestoreBudgets, CategoryBudgetStatus, STANDARD_CATEGORIES } from "@/hooks/useFirestoreBudgets";
 import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { exportBudgetReportToCSV } from "@/utils/exportFinancialData";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -117,7 +121,8 @@ export function BudgetOverview() {
     isAuthenticated,
   } = useFirestoreBudgets(selectedMonth, selectedYear);
 
-  const { profile } = useCoinKeeper();
+  const { profile, openExportModal } = useCoinKeeper();
+  const { signInWithGoogle } = useAuth();
 
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState("");
@@ -265,18 +270,30 @@ export function BudgetOverview() {
               <Target className="w-6 h-6 text-primary" />
               Budget Overview
             </h1>
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-[11px] font-mono gap-1 border",
-                isAuthenticated
-                  ? "border-emerald-500/30 text-emerald-500 bg-emerald-500/10"
-                  : "border-amber-500/30 text-amber-500 bg-amber-500/10"
-              )}
-            >
-              <Cloud className="w-3 h-3" />
-              {isAuthenticated ? "Firestore Synced" : "Guest Sandbox"}
-            </Badge>
+            {isAuthenticated ? (
+              <Badge
+                variant="outline"
+                className="text-[11px] font-mono gap-1 border border-emerald-500/30 text-emerald-500 bg-emerald-500/10"
+              >
+                <Cloud className="w-3 h-3" />
+                Firestore Synced
+              </Badge>
+            ) : (
+              <button
+                type="button"
+                onClick={() => signInWithGoogle()}
+                className="inline-flex"
+                title="Click to sign in with Google and activate cloud Firestore sync"
+              >
+                <Badge
+                  variant="outline"
+                  className="text-[11px] font-mono gap-1 border border-amber-500/30 text-amber-500 bg-amber-500/10 hover:bg-amber-500/20 transition-colors cursor-pointer"
+                >
+                  <Cloud className="w-3 h-3" />
+                  Guest Sandbox (Sign in to Sync)
+                </Badge>
+              </button>
+            )}
           </div>
           <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
             Real-time Firestore tracking of monthly cashflow and category spending limits.
@@ -353,6 +370,75 @@ export function BudgetOverview() {
                 <div>
                   <p className="font-semibold">Balanced Living</p>
                   <p className="text-[10px] text-muted-foreground">Balanced caps for metro lifestyles</p>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Export Budget Report CSV Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5 text-xs font-medium border-border/60 hover:border-primary/40 text-foreground"
+                title="Export budget and spending reports to CSV"
+              >
+                <Download className="w-3.5 h-3.5 text-primary" />
+                <span className="hidden sm:inline">Export CSV</span>
+                <span className="sm:hidden">Export</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuLabel className="text-xs">Export Budget Data</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => {
+                  exportBudgetReportToCSV({
+                    month: selectedMonth,
+                    year: selectedYear,
+                    monthName,
+                    currency: profile.currency || "INR",
+                    monthlyIncome: summary.income,
+                    totalBudgeted: summary.totalBudgeted,
+                    totalExpenses: summary.expenses,
+                    netSavings: summary.netSavings,
+                    savingsRate: summary.savingsRate,
+                    overallPacing: summary.overallPacing,
+                    budgetHealth: summary.budgetHealth,
+                    categories: summary.categoryBreakdown.map((cat) => ({
+                      category: cat.category,
+                      label: cat.label,
+                      budgeted: cat.budgeted,
+                      spent: cat.spent,
+                      remaining: cat.remaining,
+                      percentUsed: cat.percentUsed,
+                      status: cat.status,
+                      transactionCount: cat.transactionCount,
+                    })),
+                  });
+                  toast.success(`Exported ${monthName} ${selectedYear} Budget Report to CSV!`);
+                }}
+                className="text-xs cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+                  <div>
+                    <p className="font-semibold">{monthName} Budget Report</p>
+                    <p className="text-[10px] text-muted-foreground">Download current month as CSV</p>
+                  </div>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => openExportModal("budgets")}
+                className="text-xs cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <Download className="w-4 h-4 text-primary" />
+                  <div>
+                    <p className="font-semibold">Export Center...</p>
+                    <p className="text-[10px] text-muted-foreground">Custom date ranges, transactions & trends</p>
+                  </div>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>

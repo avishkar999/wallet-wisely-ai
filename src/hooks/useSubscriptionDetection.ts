@@ -41,10 +41,11 @@ export function useSubscriptionDetection() {
     transactions
       .filter((t) => t.type === "expense")
       .forEach((t) => {
-        const normalizedName = t.name.toLowerCase().trim();
+        const rawName = t.name || t.description || "Recurring Payment";
+        const normalizedName = rawName.toLowerCase().trim();
         if (!groupedByName[normalizedName]) {
           groupedByName[normalizedName] = {
-            name: t.name,
+            name: rawName,
             transactions: [],
           };
         }
