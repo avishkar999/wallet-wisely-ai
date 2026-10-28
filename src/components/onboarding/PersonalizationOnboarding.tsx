@@ -428,7 +428,7 @@ export function PersonalizationOnboarding({ open, onOpenChange }: OnboardingProp
               onClick={handleFinish}
               className="bg-gradient-primary text-primary-foreground hover:opacity-90 shadow-glow gap-1.5 ml-auto font-semibold"
             >
-              <Sparkles className="w-4 h-4" /> Launch My CoinKeeper
+              <Sparkles className="w-4 h-4" /> Launch WalletWisely
             </Button>
           )}
         </div>

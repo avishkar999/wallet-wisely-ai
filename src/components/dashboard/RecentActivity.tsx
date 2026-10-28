@@ -95,7 +95,7 @@ export function RecentActivity() {
           <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
             {dashboardCategoryFilter
               ? `No transactions matched "${dashboardCategoryFilter}".`
-              : "Your ledger is clean and ready. Every payment or deposit you record will appear here."}
+              : "Your ledger is clean and ready. Authorised transactions from your connected accounts will appear here automatically."}
           </p>
         </div>
       ) : (

@@ -13,6 +13,8 @@ import {
   ShieldCheck,
   Target,
   Wallet,
+  Building2,
+  UploadCloud,
 } from "lucide-react";
 import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
 import { useFinancialSummary } from "@/hooks/useTransactions";
@@ -30,7 +32,7 @@ export function FinancialHero({ onNavigateTab }: FinancialHeroProps) {
   const {
     profile,
     formatMoney,
-    openQuickAdd,
+    openBankImport,
     setShowOnboardingModal,
     setShowDashboardCustomizer,
   } = useCoinKeeper();
@@ -233,10 +235,10 @@ export function FinancialHero({ onNavigateTab }: FinancialHeroProps) {
                 </span>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                Start by adding how money moves through your life.
+                Connect your account for automated wealth tracking.
               </h3>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                CoinKeeper does not force a predefined lifestyle. Whether you are managing student allowances, freelancing milestones, or executive payroll, record your first inflow and outflow to activate personal cash flows and live pulse analytics.
+                WalletWisely operates on zero manual entry. Connect your bank or payment institution through the regulated Account Aggregator network, or upload an electronic bank statement to automatically track spending, cash flow pacing, and category limits.
               </p>
             </div>
 
@@ -244,18 +246,10 @@ export function FinancialHero({ onNavigateTab }: FinancialHeroProps) {
             <div className="flex flex-wrap items-center gap-3 shrink-0">
               <Button
                 type="button"
-                onClick={() => openQuickAdd("income")}
-                className="bg-success text-success-foreground hover:bg-success/90 font-semibold text-xs h-10 px-5 gap-1.5 shadow-sm"
-              >
-                <ArrowDownLeft className="w-4 h-4" /> + Add Income
-              </Button>
-
-              <Button
-                type="button"
-                onClick={() => openQuickAdd("expense")}
+                onClick={openBankImport}
                 className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs h-10 px-5 gap-1.5 shadow-sm"
               >
-                <Plus className="w-4 h-4" /> + Add Expense
+                <UploadCloud className="w-4 h-4" /> Import Statement
               </Button>
             </div>
           </div>

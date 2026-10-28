@@ -1,65 +1,45 @@
 import { motion } from "framer-motion";
-import { Plus, ArrowUpRight, CreditCard, PiggyBank, Target, Wallet } from "lucide-react";
+import { Building2, RefreshCw, Target, Download, Wallet, Lock } from "lucide-react";
 import { useState } from "react";
-import { AddTransactionDialog } from "@/components/forms/AddTransactionDialog";
-import { AddInvestmentDialog } from "@/components/forms/AddInvestmentDialog";
-import { AddDebtDialog } from "@/components/forms/AddDebtDialog";
-
-const actions = [
-  { 
-    label: "Expense", 
-    icon: Plus, 
-    color: "hsl(var(--primary))", 
-    bgClass: "bg-primary/10 hover:bg-primary/20",
-    dialog: "expense" 
-  },
-  { 
-    label: "Income", 
-    icon: ArrowUpRight, 
-    color: "hsl(var(--success))", 
-    bgClass: "bg-success/10 hover:bg-success/20",
-    dialog: "income" 
-  },
-  { 
-    label: "Invest", 
-    icon: PiggyBank, 
-    color: "hsl(var(--accent))", 
-    bgClass: "bg-accent/10 hover:bg-accent/20",
-    dialog: "investment" 
-  },
-  { 
-    label: "Debt", 
-    icon: CreditCard, 
-    color: "hsl(var(--warning))", 
-    bgClass: "bg-warning/10 hover:bg-warning/20",
-    dialog: "debt" 
-  },
-];
+import { FinancialConnectionModal } from "@/components/connection/FinancialConnectionModal";
+import { ConnectionManagerDialog } from "@/components/connection/ConnectionManagerDialog";
+import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
 
 export function QuickActionsCompact() {
-  const [showTransactionDialog, setShowTransactionDialog] = useState(false);
-  const [showInvestmentDialog, setShowInvestmentDialog] = useState(false);
-  const [showDebtDialog, setShowDebtDialog] = useState(false);
-  const [transactionType, setTransactionType] = useState<"expense" | "income">("expense");
+  const { openBankImport, openExportModal } = useCoinKeeper();
+  const [showConnectModal, setShowConnectModal] = useState(false);
+  const [showManageModal, setShowManageModal] = useState(false);
 
-  const handleActionClick = (dialog: string) => {
-    switch (dialog) {
-      case "expense":
-        setTransactionType("expense");
-        setShowTransactionDialog(true);
-        break;
-      case "income":
-        setTransactionType("income");
-        setShowTransactionDialog(true);
-        break;
-      case "investment":
-        setShowInvestmentDialog(true);
-        break;
-      case "debt":
-        setShowDebtDialog(true);
-        break;
-    }
-  };
+  const actions = [
+    {
+      label: "Connect Bank",
+      icon: Building2,
+      color: "hsl(var(--primary))",
+      bgClass: "bg-primary/10 hover:bg-primary/20",
+      onClick: () => setShowConnectModal(true),
+    },
+    {
+      label: "Connections",
+      icon: Lock,
+      color: "hsl(var(--accent))",
+      bgClass: "bg-accent/10 hover:bg-accent/20",
+      onClick: () => setShowManageModal(true),
+    },
+    {
+      label: "Import File",
+      icon: RefreshCw,
+      color: "hsl(var(--success))",
+      bgClass: "bg-success/10 hover:bg-success/20",
+      onClick: openBankImport,
+    },
+    {
+      label: "Export CSV",
+      icon: Download,
+      color: "hsl(var(--warning))",
+      bgClass: "bg-warning/10 hover:bg-warning/20",
+      onClick: () => openExportModal("transactions"),
+    },
+  ];
 
   return (
     <>
@@ -74,8 +54,8 @@ export function QuickActionsCompact() {
             <Wallet className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Quick Actions</h3>
-            <p className="text-xs text-muted-foreground">Add new entries</p>
+            <h3 className="text-sm font-semibold text-foreground">Automated Hub</h3>
+            <p className="text-xs text-muted-foreground">Manage feeds & data</p>
           </div>
         </div>
 
@@ -90,16 +70,16 @@ export function QuickActionsCompact() {
                 transition={{ delay: 0.2 + index * 0.05 }}
                 whileHover={{ scale: 1.05, y: -2 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => handleActionClick(action.dialog)}
+                onClick={action.onClick}
                 className={`flex flex-col items-center gap-2 p-3 rounded-xl ${action.bgClass} border border-transparent hover:border-border/50 transition-all cursor-pointer group`}
               >
-                <div 
+                <div
                   className="w-9 h-9 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110"
                   style={{ backgroundColor: `${action.color}15` }}
                 >
                   <Icon className="w-4.5 h-4.5" style={{ color: action.color }} />
                 </div>
-                <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors text-center">
                   {action.label}
                 </span>
               </motion.button>
@@ -108,18 +88,15 @@ export function QuickActionsCompact() {
         </div>
       </motion.div>
 
-      <AddTransactionDialog 
-        open={showTransactionDialog} 
-        onOpenChange={setShowTransactionDialog}
-        defaultType={transactionType}
+      <FinancialConnectionModal
+        open={showConnectModal}
+        onOpenChange={setShowConnectModal}
+        onOpenBankStatementImport={openBankImport}
       />
-      <AddInvestmentDialog 
-        open={showInvestmentDialog} 
-        onOpenChange={setShowInvestmentDialog} 
-      />
-      <AddDebtDialog 
-        open={showDebtDialog} 
-        onOpenChange={setShowDebtDialog} 
+      <ConnectionManagerDialog
+        open={showManageModal}
+        onOpenChange={setShowManageModal}
+        onAddNewConnection={() => setShowConnectModal(true)}
       />
     </>
   );

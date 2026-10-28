@@ -14,7 +14,8 @@ import {
 import { useTransactions } from "@/hooks/useTransactions";
 import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
 import { EditTransactionDialog } from "@/components/forms/EditTransactionDialog";
-import { AddTransactionDialog } from "@/components/forms/AddTransactionDialog";
+import { FinancialConnectionModal } from "@/components/connection/FinancialConnectionModal";
+import { Building2 } from "lucide-react";
 import { exportToCSV, exportToExcel } from "@/utils/exportTransactions";
 import { Tables, Constants } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
@@ -69,6 +70,7 @@ export function TransactionsHistory() {
   const [monthFilter, setMonthFilter] = useState<string>("all");
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [showConnectModal, setShowConnectModal] = useState(false);
 
   // Get unique months from transactions
   const availableMonths = useMemo(() => {
@@ -267,7 +269,15 @@ export function TransactionsHistory() {
                 <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
                 Excel
               </Button>
-              <AddTransactionDialog />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowConnectModal(true)}
+                className="text-xs h-8 gap-1.5"
+              >
+                <Building2 className="w-3.5 h-3.5 text-primary" />
+                Connect Feed
+              </Button>
             </div>
           </div>
           {dashboardCategoryFilter && (
@@ -431,6 +441,11 @@ export function TransactionsHistory() {
         transaction={editingTransaction}
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
+      />
+      <FinancialConnectionModal
+        open={showConnectModal}
+        onOpenChange={setShowConnectModal}
+        onOpenBankStatementImport={openBankImport}
       />
     </div>
   );

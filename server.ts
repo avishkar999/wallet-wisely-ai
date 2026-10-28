@@ -358,7 +358,7 @@ ${
     });
     contents.push({
       role: "model",
-      parts: [{ text: `Understood. I am CoinKeeper Copilot, fully briefed on your financial data (${currency} ${income.toLocaleString("en-IN")} income, ${currency} ${expenses.toLocaleString("en-IN")} expenses, ${savingsRate}% savings rate). How can I guide you today?` }],
+      parts: [{ text: `Understood. I am WalletWisely Copilot, fully briefed on your financial data (${currency} ${income.toLocaleString("en-IN")} income, ${currency} ${expenses.toLocaleString("en-IN")} expenses, ${savingsRate}% savings rate). How can I guide you today?` }],
     });
 
     messages.forEach((msg: any) => {
@@ -412,8 +412,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  app.listen(Number(PORT), "0.0.0.0", () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
 }
 

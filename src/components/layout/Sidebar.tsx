@@ -88,10 +88,10 @@ export function Sidebar({ activeTab, onTabChange, isCollapsed, onToggle }: Sideb
               className="flex flex-col"
             >
               <span className="text-lg font-bold text-foreground tracking-tight flex items-center gap-1.5">
-                CoinKeeper
+                WalletWisely
               </span>
               <span className="text-[10px] text-primary uppercase font-mono tracking-wider font-semibold">
-                Personal Finance OS
+                Automated Finance
               </span>
             </motion.div>
           )}

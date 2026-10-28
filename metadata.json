@@ -1,6 +1,6 @@
 {
   "name": "Wallet Wisely",
-  "description": "CoinKeeper: Personal finance operating system that adapts to the user's financial life, lifestyle, and priorities.",
+  "description": "WalletWisely: Automated personal-finance management platform with real-time bank and UPI data synchronisation, automated categorisation, and intelligent budget tracking.",
   "permissions": [],
   "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

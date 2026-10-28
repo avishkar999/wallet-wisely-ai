@@ -98,8 +98,8 @@ export function RecentTransactionsCard() {
           {recentTransactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <HelpCircle className="w-10 h-10 text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">No transactions yet</p>
-              <p className="text-xs text-muted-foreground">Add your first transaction to get started</p>
+              <p className="text-sm text-muted-foreground">No transactions received yet</p>
+              <p className="text-xs text-muted-foreground">Connect a financial feed or import a bank statement</p>
             </div>
           ) : (
             recentTransactions.map((txn, index) => {

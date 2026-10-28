@@ -21,7 +21,7 @@ import { TransactionsHistory } from "@/components/transactions/TransactionsHisto
 import { SpendingAnalytics } from "@/components/analytics/SpendingAnalytics";
 import { GoalTracker } from "@/components/goals/GoalTracker";
 import { RentalManager } from "@/components/rentals/RentalManager";
-import { Bell, Search, Menu, Sparkles, Sliders, Plus, User, Layers, Wallet, CreditCard, UploadCloud, Target, Scan, Download } from "lucide-react";
+import { Bell, Search, Menu, Sparkles, Sliders, Plus, User, Layers, Wallet, CreditCard, UploadCloud, Target, Scan, Download, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
@@ -49,7 +49,7 @@ import { NetWorthModule } from "@/components/dashboard/NetWorthModule";
 import { PersonalFinancialRulesCard } from "@/components/dashboard/PersonalFinancialRulesCard";
 import { SubscriptionImpactCard } from "@/components/dashboard/SubscriptionImpactCard";
 import { SubscriptionManager } from "@/components/subscriptions/SubscriptionManager";
-import { SmartQuickAddTransactionDialog } from "@/components/forms/SmartQuickAddTransactionDialog";
+import { FinancialConnectionModal } from "@/components/connection/FinancialConnectionModal";
 import { PersonalizationOnboarding } from "@/components/onboarding/PersonalizationOnboarding";
 import { CategoryManagerDialog } from "@/components/categories/CategoryManagerDialog";
 import { BankImportModal } from "@/components/import/BankImportModal";
@@ -83,6 +83,7 @@ const Index = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [showConnectModal, setShowConnectModal] = useState(false);
   const isMobile = useIsMobile();
 
   // Auto-launch multi-step onboarding wizard for new zero-data profiles
@@ -240,7 +241,7 @@ const Index = () => {
                       className="group flex items-center gap-1.5 text-foreground hover:text-primary transition-colors text-left"
                       title="Click to change your financial persona"
                     >
-                      <span>CoinKeeper OS</span>
+                      <span>WalletWisely</span>
                       <span className="text-[11px] font-medium font-mono px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 capitalize group-hover:bg-primary/20">
                         {profile.persona} · {profile.currency}
                       </span>
@@ -316,26 +317,14 @@ const Index = () => {
                 <Download className="w-3.5 h-3.5 text-primary" /> Export
               </Button>
 
-              {/* Scan Receipt Button */}
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setShowQuickAddModal(true)}
-                className="hidden lg:flex text-xs h-8 gap-1.5 border-border/50 text-muted-foreground hover:text-foreground hover:border-primary/40"
-                title="Scan Receipt or UPI Screenshot (Gemini OCR)"
-              >
-                <Scan className="w-3.5 h-3.5 text-primary" /> Scan Receipt
-              </Button>
-
-              {/* Quick Add Button */}
+              {/* Connect Account Button */}
               <Button
                 type="button"
                 size="sm"
-                onClick={() => setShowQuickAddModal(true)}
-                className="text-xs h-8 bg-primary text-primary-foreground font-semibold gap-1 shadow-sm"
+                onClick={() => setShowConnectModal(true)}
+                className="text-xs h-8 bg-primary text-primary-foreground font-semibold gap-1.5 shadow-sm"
               >
-                <Plus className="w-4 h-4" /> Add Transaction
+                <Building2 className="w-3.5 h-3.5" /> Connect Account
               </Button>
 
               <Button variant="ghost" size="icon" className="relative h-8 w-8">
@@ -354,11 +343,11 @@ const Index = () => {
         {isMobile && (
           <button
             type="button"
-            onClick={() => setShowQuickAddModal(true)}
+            onClick={() => setShowConnectModal(true)}
             className="fixed bottom-6 right-6 w-13 h-13 rounded-full bg-gradient-primary text-primary-foreground shadow-elevated flex items-center justify-center z-40 hover:scale-105 active:scale-95 transition-all"
-            title="Quick Add Transaction"
+            title="Connect Financial Account"
           >
-            <Plus className="w-6 h-6" />
+            <Building2 className="w-6 h-6" />
           </button>
         )}
       </main>
@@ -372,7 +361,11 @@ const Index = () => {
         open={showDashboardCustomizer}
         onOpenChange={setShowDashboardCustomizer}
       />
-      <SmartQuickAddTransactionDialog />
+      <FinancialConnectionModal
+        open={showConnectModal}
+        onOpenChange={setShowConnectModal}
+        onOpenBankStatementImport={() => setShowBankImportModal(true)}
+      />
       <MonthlyResetModal />
       <MonthlyWrappedModal />
       <CategoryManagerDialog
