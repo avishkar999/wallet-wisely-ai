@@ -8,7 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const isProd = process.env.NODE_ENV === "production";
+const PORT = isProd ? (process.env.PORT || 8080) : 3000;
 
 // Allow larger JSON payloads for screenshot base64 images
 app.use(express.json({ limit: "25mb" }));
@@ -395,8 +396,6 @@ ${
 });
 
 // Vite Integration: Development vs Production
-const isProd = process.env.NODE_ENV === "production";
-
 async function startServer() {
   if (!isProd) {
     const { createServer } = await import("vite");

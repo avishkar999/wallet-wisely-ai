@@ -50,6 +50,7 @@ import { PersonalFinancialRulesCard } from "@/components/dashboard/PersonalFinan
 import { SubscriptionImpactCard } from "@/components/dashboard/SubscriptionImpactCard";
 import { SubscriptionManager } from "@/components/subscriptions/SubscriptionManager";
 import { FinancialConnectionModal } from "@/components/connection/FinancialConnectionModal";
+import { ConnectionStatus } from "@/components/connection/ConnectionStatus";
 import { PersonalizationOnboarding } from "@/components/onboarding/PersonalizationOnboarding";
 import { CategoryManagerDialog } from "@/components/categories/CategoryManagerDialog";
 import { BankImportModal } from "@/components/import/BankImportModal";
@@ -271,6 +272,14 @@ const Index = () => {
             </div>
             
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Real-time Connection & Sync Status Indicator */}
+              <div className="hidden lg:flex">
+                <ConnectionStatus
+                  variant="compact"
+                  onOpenConnect={() => setShowConnectModal(true)}
+                />
+              </div>
+
               {/* Personalize Button */}
               <Button
                 type="button"

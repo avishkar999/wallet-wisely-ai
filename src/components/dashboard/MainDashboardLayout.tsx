@@ -37,6 +37,7 @@ import {
 import { ConnectionState, ConsentArtifact } from "@/types/connection";
 import { FinancialConnectionModal } from "@/components/connection/FinancialConnectionModal";
 import { ConnectionManagerDialog } from "@/components/connection/ConnectionManagerDialog";
+import { ConnectionStatus } from "@/components/connection/ConnectionStatus";
 
 interface MainDashboardLayoutProps {
   onNavigateTab?: (tab: string) => void;
@@ -286,6 +287,14 @@ export function MainDashboardLayout({ onNavigateTab }: MainDashboardLayoutProps)
           </div>
         </div>
       </section>
+
+      {/* Real-time Synchronization & Connectivity Status Widget (Glassmorphism) */}
+      <ConnectionStatus
+        variant="card"
+        onSyncComplete={refreshConsents}
+        onOpenConnect={() => setShowConnectModal(true)}
+        onOpenManage={() => setShowManageModal(true)}
+      />
 
       {/* =========================================================================
           2. EMPTY STATE WHEN DISCONNECTED (No manual entry; onboarding connection CTA)
