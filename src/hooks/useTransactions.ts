@@ -54,20 +54,62 @@ export function useAddTransaction() {
   const { user } = useAuth();
 
   return useMutation({
-    mutationFn: async (transaction: Omit<TransactionInsert, "user_id">) => {
-      if (!user) throw new Error("Not authenticated");
-      
+    mutationFn: async (transaction: Omit<TransactionInsert, "user_id"> | Record<string, any>) => {
+      console.log("[TransactionDebug] Supabase authentication checked.");
+
+      // Check active Supabase session or fall back to context user
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+      const currentAuthUser = sessionData?.session?.user || user;
+
+      if (!currentAuthUser || !currentAuthUser.id) {
+        console.error("[TransactionDebug] No authenticated Supabase user found.", { sessionErr });
+        throw new Error("You must be authenticated to add a transaction. Please sign in.");
+      }
+
+      console.log("[TransactionDebug] Authenticated user ID retrieved:", currentAuthUser.id);
+
+      // Verify and map payload to actual Supabase 'transactions' table schema
+      const payload: TransactionInsert = {
+        user_id: currentAuthUser.id,
+        name: (transaction as any).name || (transaction as any).title || "Untitled Transaction",
+        amount: Number(transaction.amount),
+        type: transaction.type || (transaction as any).transaction_type || "expense",
+        category: (transaction.category as any) || "other",
+        payment_method: (transaction.payment_method as any) || "upi",
+        transaction_date: transaction.transaction_date || new Date().toISOString().split("T")[0],
+        description: transaction.description || null,
+      };
+
+      console.log("[TransactionDebug] Supabase insertion initiated for table 'transactions'. Payload:", {
+        user_id: payload.user_id,
+        name: payload.name,
+        amount: payload.amount,
+        type: payload.type,
+        category: payload.category,
+        payment_method: payload.payment_method,
+        transaction_date: payload.transaction_date,
+      });
+
       const { data, error } = await supabase
         .from("transactions")
-        .insert({ ...transaction, user_id: user.id })
+        .insert(payload)
         .select()
         .single();
-      
-      if (error) throw error;
+
+      console.log("[TransactionDebug] Supabase response received:", { data, error });
+
+      if (error) {
+        console.error("[TransactionDebug] Supabase insertion error:", error);
+        throw new Error(error.message || `Database error (${error.code})`);
+      }
+
+      console.log("[TransactionDebug] Transaction successfully saved with ID:", data?.id);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("[TransactionDebug] Dashboard refresh initiated.");
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["monthly_summaries"] });
     },
   });
 }

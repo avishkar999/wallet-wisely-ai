@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Receipt, ArrowDownLeft, ShoppingBag, Fuel, Smartphone, Zap, Utensils, Film, Heart, HelpCircle, Pencil } from "lucide-react";
+import { Receipt, ArrowDownLeft, ShoppingBag, Fuel, Smartphone, Zap, Utensils, Film, Heart, HelpCircle, Pencil, Plus } from "lucide-react";
 import { useTransactions } from "@/hooks/useTransactions";
 import { EditTransactionDialog } from "@/components/forms/EditTransactionDialog";
+import { AddTransactionDialog } from "@/components/forms/AddTransactionDialog";
 import { Tables } from "@/integrations/supabase/types";
 
 type Transaction = Tables<"transactions">;
@@ -89,9 +90,21 @@ export function RecentTransactionsCard() {
             <Receipt className="w-5 h-5 text-primary" />
             Recent Transactions
           </CardTitle>
-          {transactions.length > 6 && (
-            <button className="text-xs text-primary font-medium hover:underline">View All</button>
-          )}
+          <div className="flex items-center gap-2.5">
+            <AddTransactionDialog
+              trigger={
+                <button
+                  type="button"
+                  className="text-xs text-primary font-medium hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Add
+                </button>
+              }
+            />
+            {transactions.length > 6 && (
+              <button className="text-xs text-muted-foreground hover:text-foreground">View All</button>
+            )}
+          </div>
         </CardHeader>
         
         <CardContent className="space-y-2">

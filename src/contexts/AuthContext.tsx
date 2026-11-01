@@ -31,64 +31,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 1. Mandatory connection test on boot per Firebase skill guidelines
     testConnection();
 
-    // 2. Firebase Auth Listener
-    const unsubscribeFirebase = onAuthStateChanged(auth, (fbUser) => {
-      if (fbUser) {
-        const mappedUser: User = {
-          id: fbUser.uid,
-          app_metadata: { provider: "google" },
-          user_metadata: {
-            display_name: fbUser.displayName || fbUser.email?.split("@")[0] || "User",
-            avatar_url: fbUser.photoURL,
-          },
-          aud: "authenticated",
-          created_at: fbUser.metadata.creationTime || new Date().toISOString(),
-          email: fbUser.email || undefined,
-        };
-
-        const mockSession: Session = {
-          access_token: "firebase-token",
-          token_type: "bearer",
-          expires_in: 3600,
-          refresh_token: "firebase-refresh",
-          user: mappedUser,
-        };
-
-        setUser(mappedUser);
-        setSession(mockSession);
-        setLoading(false);
-
-        // Sync user profile to Firestore
-        syncUserProfile({
-          userId: fbUser.uid,
-          displayName: fbUser.displayName || "User",
-          email: fbUser.email || undefined,
-          createdAt: fbUser.metadata.creationTime || new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }).catch((err) => console.warn("Firestore profile sync warning:", err));
-      } else {
-        // If not logged in via Firebase, check Supabase session
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          setSession(session);
-          setUser(session?.user ?? null);
+    // 2. Initial Session Check & Auto-Demo Authentication
+    const initAuth = async () => {
+      try {
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
+        if (existingSession?.user) {
+          console.log("[Auth] Active Supabase session found:", existingSession.user.id);
+          setSession(existingSession);
+          setUser(existingSession.user);
           setLoading(false);
+          return;
+        }
+
+        // Auto-sign in demo account for preview environment so RLS policies pass
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+          email: "demo@walletwisely.app",
+          password: "demoPassword123!",
         });
+
+        if (signInData?.session) {
+          console.log("[Auth] Demo user authenticated:", signInData.session.user.id);
+          setSession(signInData.session);
+          setUser(signInData.session.user);
+        } else if (signInErr) {
+          console.warn("[Auth] Demo sign in attempt:", signInErr.message);
+        }
+      } catch (err) {
+        console.warn("[Auth] Session initialization warning:", err);
+      } finally {
+        setLoading(false);
       }
-    });
+    };
+
+    initAuth();
 
     // 3. Supabase Auth Listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!auth.currentUser) {
+      if (session?.user) {
         setSession(session);
-        setUser(session?.user ?? null);
+        setUser(session.user);
         setLoading(false);
       }
     });
 
     return () => {
-      unsubscribeFirebase();
       subscription.unsubscribe();
     };
   }, []);

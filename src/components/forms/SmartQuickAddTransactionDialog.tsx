@@ -140,10 +140,10 @@ export function SmartQuickAddTransactionDialog() {
       setLocation("");
       setPeople("");
       setProjectClient("");
-    } catch {
+    } catch (error: any) {
       toast({
         title: "Error saving transaction",
-        description: "Failed to record transaction. Please try again.",
+        description: error?.message || "Failed to record transaction. Please try again.",
         variant: "destructive",
       });
     }

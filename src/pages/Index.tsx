@@ -57,6 +57,8 @@ import { BankImportModal } from "@/components/import/BankImportModal";
 import { TransactionCategorizerBar } from "@/components/categorizer/TransactionCategorizerBar";
 import { ExportDataDialog } from "@/components/export/ExportDataDialog";
 import { MainDashboardLayout } from "@/components/dashboard/MainDashboardLayout";
+import { AddTransactionDialog } from "@/components/forms/AddTransactionDialog";
+import { SmartQuickAddTransactionDialog } from "@/components/forms/SmartQuickAddTransactionDialog";
 
 const Index = () => {
   // Monthly cycles handling
@@ -326,14 +328,17 @@ const Index = () => {
                 <Download className="w-3.5 h-3.5 text-primary" /> Export
               </Button>
 
+              {/* Add Transaction Button */}
+              <AddTransactionDialog />
+
               {/* Connect Account Button */}
               <Button
                 type="button"
                 size="sm"
                 onClick={() => setShowConnectModal(true)}
-                className="text-xs h-8 bg-primary text-primary-foreground font-semibold gap-1.5 shadow-sm"
+                className="text-xs h-8 bg-secondary border border-border/60 text-foreground font-semibold gap-1.5 shadow-sm hover:bg-secondary/80"
               >
-                <Building2 className="w-3.5 h-3.5" /> Connect Account
+                <Building2 className="w-3.5 h-3.5 text-primary" /> Connect Account
               </Button>
 
               <Button variant="ghost" size="icon" className="relative h-8 w-8">
@@ -390,6 +395,7 @@ const Index = () => {
         onOpenChange={setShowExportModal}
         defaultTab={exportInitialTab}
       />
+      <SmartQuickAddTransactionDialog />
     </div>
   );
 };

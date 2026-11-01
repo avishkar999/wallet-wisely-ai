@@ -14,6 +14,7 @@ import {
 import { useTransactions } from "@/hooks/useTransactions";
 import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
 import { EditTransactionDialog } from "@/components/forms/EditTransactionDialog";
+import { AddTransactionDialog } from "@/components/forms/AddTransactionDialog";
 import { FinancialConnectionModal } from "@/components/connection/FinancialConnectionModal";
 import { Building2 } from "lucide-react";
 import { exportToCSV, exportToExcel } from "@/utils/exportTransactions";
@@ -246,13 +247,14 @@ export function TransactionsHistory() {
               Filters & Export
             </CardTitle>
             <div className="flex items-center gap-2 flex-wrap">
+              <AddTransactionDialog />
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
                 onClick={openBankImport}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs h-8 gap-1.5 font-semibold shadow-sm"
+                className="text-xs h-8 gap-1.5 font-medium border-border/50 text-muted-foreground hover:text-foreground"
               >
-                <UploadCloud className="w-3.5 h-3.5" />
+                <UploadCloud className="w-3.5 h-3.5 text-primary" />
                 Import Statement
               </Button>
               <Button

@@ -274,13 +274,19 @@ export default function Auth() {
               disabled={loading}
               onClick={async () => {
                 setLoading(true);
-                const { error } = await signIn("demo@walletwisely.app", "demo123");
+                const { error } = await signIn("demo@walletwisely.app", "demoPassword123!");
                 if (!error) {
                   toast({
-                    title: "Welcome to CoinKeeper!",
+                    title: "Welcome to WalletWisely!",
                     description: "Signed in as Demo User.",
                   });
                   navigate(redirectTo);
+                } else {
+                  toast({
+                    title: "Demo Sign In Failed",
+                    description: error.message || "Failed to sign into demo account.",
+                    variant: "destructive",
+                  });
                 }
                 setLoading(false);
               }}
