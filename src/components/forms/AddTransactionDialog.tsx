@@ -85,21 +85,34 @@ export function AddTransactionDialog({
   };
 
   const handleButtonClick = () => {
-    console.log("[TransactionDebug] Add Transaction button clicked.");
+    console.log("[TransactionDebug:AddTransactionDialog] 'Add Transaction' button clicked at", new Date().toISOString(), {
+      isOpen: open,
+      isSubmitting,
+      isPending: addTransaction.isPending,
+      currentFieldValues: {
+        title: title || "(empty)",
+        amount: amount || "(empty)",
+        type,
+        category,
+        paymentMethod,
+        date,
+      },
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[TransactionDebug] Form submission initiated.");
+    const submissionStartTime = performance.now();
+    console.group(`[TransactionDebug:AddTransactionDialog] Form submission initiated [${new Date().toISOString()}]`);
 
-    console.log("[TransactionDebug] Form values received:", {
+    console.log("[TransactionDebug:AddTransactionDialog] 1. Form values captured:", {
       title,
       amount,
       category,
       type,
       date,
       paymentMethod,
-      description: description ? "(present)" : "(empty)",
+      description: description ? `"${description.slice(0, 30)}..."` : "(none)",
     });
 
     // Reset error banners
@@ -111,17 +124,20 @@ export function AddTransactionDialog({
     let isValid = true;
     if (!title || !title.trim()) {
       setTitleError("Please enter a transaction title / name");
+      console.warn("[TransactionDebug:AddTransactionDialog] 2. Validation failed: title is missing or empty.");
       isValid = false;
     }
 
     const parsedAmount = parseFloat(amount);
     if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
       setAmountError("Please enter a valid amount greater than 0");
+      console.warn("[TransactionDebug:AddTransactionDialog] 2. Validation failed: amount is invalid:", { raw: amount, parsed: parsedAmount });
       isValid = false;
     }
 
     if (!isValid) {
-      console.log("[TransactionDebug] Validation completed: valid = false");
+      console.warn("[TransactionDebug:AddTransactionDialog] 2. Form validation rejected submission. Aborting save.");
+      console.groupEnd();
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields with valid values.",
@@ -130,12 +146,12 @@ export function AddTransactionDialog({
       return;
     }
 
-    console.log("[TransactionDebug] Validation completed: valid = true");
+    console.log("[TransactionDebug:AddTransactionDialog] 2. Form validation PASSED. Proceeding to persistence...");
 
     try {
       setIsSubmitting(true);
 
-      const result = await addTransaction.mutateAsync({
+      const payload = {
         name: title.trim(),
         amount: parsedAmount,
         type,
@@ -143,9 +159,15 @@ export function AddTransactionDialog({
         payment_method: paymentMethod as any,
         transaction_date: date,
         description: description.trim() || null,
-      });
+      };
 
-      console.log("[TransactionDebug] Transaction successfully saved:", result);
+      console.log("[TransactionDebug:AddTransactionDialog] 3. Dispatching to mutation hook with payload:", payload);
+
+      const result = await addTransaction.mutateAsync(payload);
+
+      const elapsed = Math.round(performance.now() - submissionStartTime);
+      console.log("[TransactionDebug:AddTransactionDialog] 4. Supabase persistence SUCCEEDED in " + elapsed + "ms:", result);
+      console.groupEnd();
 
       toast({
         title: "Transaction Recorded",
@@ -166,12 +188,32 @@ export function AddTransactionDialog({
       // Close modal
       handleOpenChange(false);
     } catch (error: any) {
-      const errorMsg = error?.message || "Failed to record transaction. Please try again.";
-      console.error("[TransactionDebug] Submission error caught in form:", errorMsg);
-      setApiError(errorMsg);
+      const elapsed = Math.round(performance.now() - submissionStartTime);
+      
+      // Extract detailed Supabase error fields
+      const errorMessage = error?.message || "Failed to record transaction.";
+      const errorCode = error?.code ? ` [Code: ${error.code}]` : "";
+      const errorDetails = error?.details ? ` - ${error.details}` : "";
+      const errorHint = error?.hint ? ` (Hint: ${error.hint})` : "";
+      const formattedError = `${errorMessage}${errorCode}${errorDetails}${errorHint}`;
+
+      console.error(`[TransactionDebug:AddTransactionDialog] 4. Supabase persistence FAILED in ${elapsed}ms:`, {
+        error,
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+        status: error?.status,
+        timestamp: new Date().toISOString(),
+      });
+      console.groupEnd();
+
+      setApiError(formattedError);
+
+      // Capture and display Supabase error responses in a toast notification
       toast({
-        title: "Transaction Failed",
-        description: errorMsg,
+        title: "Supabase Save Error",
+        description: formattedError,
         variant: "destructive",
       });
     } finally {

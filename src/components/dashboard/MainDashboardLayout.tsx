@@ -5,6 +5,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   TrendingUp,
+  TrendingDown,
   Wallet,
   Receipt,
   UploadCloud,
@@ -38,6 +39,7 @@ import { ConnectionState, ConsentArtifact } from "@/types/connection";
 import { FinancialConnectionModal } from "@/components/connection/FinancialConnectionModal";
 import { ConnectionManagerDialog } from "@/components/connection/ConnectionManagerDialog";
 import { ConnectionStatus } from "@/components/connection/ConnectionStatus";
+import { DailySpendingPatternsChart } from "@/components/analytics/DailySpendingPatternsChart";
 
 interface MainDashboardLayoutProps {
   onNavigateTab?: (tab: string) => void;
@@ -531,6 +533,13 @@ export function MainDashboardLayout({ onNavigateTab }: MainDashboardLayoutProps)
           </div>
         </section>
       )}
+
+      {/* =========================================================================
+          4B. 30-DAY DAILY SPENDING PATTERNS & ACTIVITY SPIKES
+          ========================================================================= */}
+      <section>
+        <DailySpendingPatternsChart />
+      </section>
 
       {/* =========================================================================
           5. QUICK ACTIONS (Centered around automated feeds, sync, and governance)

@@ -9,6 +9,7 @@
         "./src/*"
       ]
     },
+    "jsx": "react-jsx",
     "skipLibCheck": true,
     "strictNullChecks": false
   },

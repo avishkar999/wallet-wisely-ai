@@ -168,5 +168,11 @@ service cloud.firestore {
         && isValidId(batchId)
         && resource.data.userId == request.auth.uid;
     }
+
+    // 5. Connection Test Probe
+    match /test/{testId} {
+      allow read: if isValidId(testId);
+      allow write: if false;
+    }
   }
 }

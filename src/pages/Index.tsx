@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { HeroHealthScore } from "@/components/dashboard/HeroHealthScore";
@@ -59,6 +59,7 @@ import { ExportDataDialog } from "@/components/export/ExportDataDialog";
 import { MainDashboardLayout } from "@/components/dashboard/MainDashboardLayout";
 import { AddTransactionDialog } from "@/components/forms/AddTransactionDialog";
 import { SmartQuickAddTransactionDialog } from "@/components/forms/SmartQuickAddTransactionDialog";
+import { DailySpendingPatternsChart } from "@/components/analytics/DailySpendingPatternsChart";
 
 const Index = () => {
   // Monthly cycles handling
@@ -433,7 +434,12 @@ const AdaptiveDashboard = ({ onNavigateTab }: { onNavigateTab?: (tab: string) =>
       case "budget":
         return <MonthlySummaryCard key="budget" />;
       case "trends":
-        return <SpendingTrendsLineChart key="trends" />;
+        return (
+          <div key="trends" className="space-y-5">
+            <DailySpendingPatternsChart />
+            <SpendingTrendsLineChart />
+          </div>
+        );
       case "cashflow":
         return <CashFlowModule key="cashflow" />;
       case "accounts":

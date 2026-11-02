@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useAccounts } from "@/hooks/useAccounts";
@@ -587,7 +587,7 @@ export function CoinKeeperProvider({ children }: { children: ReactNode }) {
   };
 
   // Currency formatter
-  const formatMoney = (amount: number, compact = false): string => {
+  const formatMoney = useCallback((amount: number, compact = false): string => {
     const sym = profile.currencySymbol || "₹";
     const abs = Math.abs(amount);
     const sign = amount < 0 ? "-" : "";
@@ -603,7 +603,7 @@ export function CoinKeeperProvider({ children }: { children: ReactNode }) {
       profile.currency === "INR" ? "en-IN" : "en-US",
       { maximumFractionDigits: 0 }
     )}`;
-  };
+  }, [profile.currencySymbol, profile.currency]);
 
   // Signature Money Pulse computation based on user's priority
   const moneyPulse = useMemo<MoneyPulseStatus>(() => {

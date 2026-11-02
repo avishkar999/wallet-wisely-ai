@@ -6,7 +6,8 @@ import listInvestmentsTool from "./tools/list-investments";
 import listSavingsGoalsTool from "./tools/list-savings-goals";
 import financialSummaryTool from "./tools/financial-summary";
 
-const projectRef = import.meta.env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
+const env = (typeof import.meta !== "undefined" && import.meta?.env) ? import.meta.env : ({} as Record<string, string | undefined>);
+const projectRef = env.VITE_SUPABASE_PROJECT_ID ?? "project-ref-unset";
 
 export default defineMcp({
   name: "money-maestro",

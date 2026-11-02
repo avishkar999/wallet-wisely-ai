@@ -220,53 +220,61 @@ export function AIAdvisorChat() {
   };
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col">
-      <Card variant="elevated" className="flex-1 flex flex-col overflow-hidden">
-        <CardHeader className="border-b border-border pb-4">
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow">
+    <div className="h-[calc(100vh-8.5rem)] max-h-[820px] flex flex-col min-h-0 walletpilot-panel">
+      <Card variant="elevated" className="flex-1 min-h-0 flex flex-col overflow-hidden border-border/70 shadow-card bg-card/95 backdrop-blur-xl">
+        <CardHeader className="border-b border-border/60 pb-3 sm:pb-4 shrink-0 bg-card/50">
+          <CardTitle className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-glow shrink-0">
               <Sparkles className="w-5 h-5 text-primary-foreground" />
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">AI Financial Advisor</h2>
-              <p className="text-xs text-muted-foreground">Powered by your financial data • Available 24/7</p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-foreground truncate">
+                  WalletPilot — AI Financial Advisor
+                </h2>
+                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                  Copilot
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground truncate">Autonomous intelligence powered by your financial records</p>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-2 shrink-0">
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              <span className="text-xs text-success">Online</span>
+              <span className="text-xs text-success font-medium">Online</span>
             </div>
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Scrollable Message History with min-h-0 and independent overflow */}
+        <CardContent className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-4 walletpilot-messages scroll-smooth">
           {messages.map((message, index) => (
             <motion.div
               key={message.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
+              transition={{ delay: index * 0.05 }}
               className={`flex gap-3 ${message.role === "user" ? "flex-row-reverse" : ""}`}
             >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
                 message.role === "user" 
-                  ? "bg-gradient-accent" 
-                  : "bg-gradient-primary"
+                  ? "bg-gradient-accent text-accent-foreground" 
+                  : "bg-gradient-primary text-primary-foreground"
               }`}>
                 {message.role === "user" ? (
-                  <User className="w-4 h-4 text-accent-foreground" />
+                  <User className="w-4 h-4" />
                 ) : (
-                  <Bot className="w-4 h-4 text-primary-foreground" />
+                  <Bot className="w-4 h-4" />
                 )}
               </div>
               
-              <div className={`max-w-[75%] p-4 rounded-2xl ${
+              <div className={`max-w-[85%] sm:max-w-[75%] p-3.5 sm:p-4 rounded-2xl ${
                 message.role === "user"
-                  ? "bg-gradient-primary text-primary-foreground rounded-br-md"
-                  : "bg-secondary text-foreground rounded-bl-md"
+                  ? "bg-gradient-primary text-primary-foreground rounded-br-md shadow-sm"
+                  : "bg-secondary/80 border border-border/40 text-foreground rounded-bl-md shadow-sm"
               }`}>
-                <p className="text-sm leading-relaxed">{message.content}</p>
+                <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
                 <p className={`text-[10px] mt-2 ${
-                  message.role === "user" ? "text-primary-foreground/70" : "text-muted-foreground"
+                  message.role === "user" ? "text-primary-foreground/75" : "text-muted-foreground"
                 }`}>
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
@@ -280,40 +288,40 @@ export function AIAdvisorChat() {
               animate={{ opacity: 1 }}
               className="flex gap-3"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center shrink-0">
                 <Bot className="w-4 h-4 text-primary-foreground" />
               </div>
-              <div className="bg-secondary p-4 rounded-2xl rounded-bl-md">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+              <div className="bg-secondary/80 border border-border/40 p-4 rounded-2xl rounded-bl-md">
+                <div className="flex gap-1.5 items-center">
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
                 </div>
               </div>
             </motion.div>
           )}
 
-          <div ref={messagesEndRef} />
+          <div ref={messagesEndRef} className="h-1" />
         </CardContent>
 
         {/* Suggested Questions */}
         {messages.length < 3 && (
-          <div className="px-4 pb-2">
-            <p className="text-xs text-muted-foreground mb-2">Suggested questions</p>
+          <div className="px-4 py-2 border-t border-border/40 shrink-0 bg-card/40">
+            <p className="text-[11px] font-medium text-muted-foreground mb-1.5">Suggested Prompts</p>
             <div className="flex flex-wrap gap-2">
               {suggestedQuestions.map((q, index) => {
                 const Icon = q.icon;
                 return (
                   <motion.button
                     key={index}
-                    initial={{ opacity: 0, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ delay: index * 0.05 }}
                     onClick={() => handleQuestionClick(q.text)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-full bg-secondary hover:bg-secondary/80 text-xs text-foreground transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary hover:bg-secondary/80 border border-border/50 text-xs text-foreground transition-all cursor-pointer hover:border-primary/40"
                   >
                     <Icon className="w-3 h-3 text-primary" />
-                    {q.text}
+                    <span>{q.text}</span>
                   </motion.button>
                 );
               })}
@@ -321,20 +329,31 @@ export function AIAdvisorChat() {
           </div>
         )}
 
-        {/* Input Area */}
-        <div className="p-4 border-t border-border">
-          <div className="flex gap-2">
+        {/* Message Composer - Always Accessible and non-shrinking */}
+        <div className="p-3.5 sm:p-4 border-t border-border/60 shrink-0 bg-card/90 backdrop-blur-md walletpilot-composer">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
+            }}
+            className="flex gap-2 items-center"
+          >
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSend()}
-              placeholder="Ask me anything about your finances..."
-              className="flex-1 bg-secondary border-0 focus-visible:ring-1 focus-visible:ring-primary"
+              placeholder="Ask WalletPilot about spending, budgets, investments, or debt..."
+              className="flex-1 bg-secondary/70 border-border/50 text-xs sm:text-sm focus-visible:ring-1 focus-visible:ring-primary h-10"
+              disabled={isTyping}
             />
-            <Button onClick={handleSend} size="icon" disabled={!input.trim() || isTyping}>
+            <Button
+              type="submit"
+              size="icon"
+              disabled={!input.trim() || isTyping}
+              className="h-10 w-10 bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm shrink-0"
+            >
               <Send className="w-4 h-4" />
             </Button>
-          </div>
+          </form>
         </div>
       </Card>
     </div>

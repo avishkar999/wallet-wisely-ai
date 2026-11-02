@@ -28,6 +28,7 @@ import {
 import { SpendingForecast } from "./SpendingForecast";
 import { BudgetVsActualChart } from "./BudgetVsActualChart";
 import { SpendingTrendsLineChart } from "./SpendingTrendsLineChart";
+import { DailySpendingPatternsChart } from "./DailySpendingPatternsChart";
 import { MonthlyFinancialReport } from "./MonthlyFinancialReport";
 import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
 import { Sparkles, Plus, FileText } from "lucide-react";
@@ -268,6 +269,9 @@ export function SpendingAnalytics() {
         </TabsContent>
 
         <TabsContent value="trends" className="space-y-6">
+          {/* 30-Day Daily Spending Patterns & Spike Activity Recharts Card */}
+          <DailySpendingPatternsChart />
+
           {/* 6-Month Spending Trends Recharts Card */}
           <SpendingTrendsLineChart />
 

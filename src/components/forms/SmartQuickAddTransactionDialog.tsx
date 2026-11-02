@@ -141,9 +141,22 @@ export function SmartQuickAddTransactionDialog() {
       setPeople("");
       setProjectClient("");
     } catch (error: any) {
+      const errorMessage = error?.message || "Failed to record transaction. Please try again.";
+      const errorCode = error?.code ? ` [Code: ${error.code}]` : "";
+      const errorDetails = error?.details ? ` - ${error.details}` : "";
+      const errorHint = error?.hint ? ` (Hint: ${error.hint})` : "";
+      const formattedError = `${errorMessage}${errorCode}${errorDetails}${errorHint}`;
+
+      console.error("[TransactionDebug:SmartQuickAdd] Supabase save error:", {
+        error,
+        code: error?.code,
+        details: error?.details,
+        hint: error?.hint,
+      });
+
       toast({
-        title: "Error saving transaction",
-        description: error?.message || "Failed to record transaction. Please try again.",
+        title: "Supabase Save Error",
+        description: formattedError,
         variant: "destructive",
       });
     }

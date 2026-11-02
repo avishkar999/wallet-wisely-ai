@@ -2,8 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { brokeredPreviewStorage } from './previewAuthStorage';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const env = (typeof import.meta !== "undefined" && import.meta?.env) ? import.meta.env : ({} as Record<string, string | undefined>);
+const SUPABASE_URL = env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const isConfigured = Boolean(
   SUPABASE_URL &&
@@ -11,15 +12,15 @@ const isConfigured = Boolean(
   !SUPABASE_URL.includes('placeholder')
 );
 
-// Demo user ID used across sessions
-const DEMO_USER_ID = "demo-user-id";
+// Demo user ID used across sessions (valid Supabase Auth UUID)
+const DEMO_USER_ID = "2e8b61e5-3277-4a3f-924f-9b163096171b";
 const DEMO_USER = {
   id: DEMO_USER_ID,
   app_metadata: {},
   user_metadata: { display_name: "Avishkar" },
   aud: "authenticated",
   created_at: new Date().toISOString(),
-  email: "demo@coinkeeper.app",
+  email: "demo@walletwisely.app",
 };
 
 const DEMO_SESSION = {
