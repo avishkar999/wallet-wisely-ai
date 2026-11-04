@@ -66,9 +66,9 @@ export function handleFirestoreError(
 export async function testConnection() {
   try {
     await getDocFromServer(doc(db, "test", "connection"));
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof Error && error.message.includes("the client is offline")) {
-      console.error("Please check your Firebase configuration.");
+      console.warn("Firebase client is currently offline.");
     }
   }
 }
@@ -77,7 +77,22 @@ export async function signInWithGoogle() {
   try {
     const result = await signInWithPopup(auth, googleProvider);
     return result.user;
-  } catch (error) {
+  } catch (error: any) {
+    const errorCode = error?.code || "";
+    // User closing the popup or cancelling is an expected user action, not an application error
+    if (
+      errorCode === "auth/popup-closed-by-user" ||
+      errorCode === "auth/cancelled-popup-request"
+    ) {
+      console.info("[FirebaseAuth] Sign-in popup was dismissed by user.");
+      return null;
+    }
+
+    if (errorCode === "auth/popup-blocked") {
+      console.warn("[FirebaseAuth] Sign-in popup was blocked by browser.");
+      throw new Error("Sign-in popup was blocked by your browser. Please allow popups for this site.");
+    }
+
     console.error("Google sign-in error:", error);
     throw error;
   }

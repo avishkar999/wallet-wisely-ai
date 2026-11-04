@@ -16,7 +16,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signInWithGoogle: () => Promise<{ error: Error | null }>;
+  signInWithGoogle: () => Promise<{ error: Error | null; cancelled?: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -34,6 +34,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 2. Initial Session Check & Auto-Demo Authentication
     const initAuth = async () => {
       try {
+        const hasExplicitlySignedOut = localStorage.getItem("coinkeeper_signed_out") === "true";
+        if (hasExplicitlySignedOut) {
+          console.log("[Auth] User explicitly signed out. Halting auto demo authentication.");
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
         const { data: { session: existingSession } } = await supabase.auth.getSession();
         if (existingSession?.user) {
           console.log("[Auth] Active Supabase session found:", existingSession.user.id);
@@ -76,38 +85,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const signUp = async (email: string, password: string, displayName?: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          display_name: displayName,
-        },
-      },
-    });
-    return { error: error as Error | null };
-  };
-
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error as Error | null };
-  };
-
-  const signInWithGoogle = async () => {
-    try {
-      const fbUser = await fbSignInWithGoogle();
-      if (fbUser) {
+    // 4. Firebase Auth Listener (Preserve Google Sign-in across refreshes)
+    const unsubFirebaseAuth = onAuthStateChanged(auth, (fbUser) => {
+      const hasExplicitlySignedOut = localStorage.getItem("coinkeeper_signed_out") === "true";
+      if (fbUser && !hasExplicitlySignedOut) {
         const mappedUser: User = {
           id: fbUser.uid,
           app_metadata: { provider: "google" },
@@ -130,17 +111,103 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setUser(mappedUser);
         setSession(mockSession);
+        setLoading(false);
       }
-      return { error: null };
-    } catch (err) {
-      return { error: err as Error };
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      unsubFirebaseAuth();
+    };
+  }, []);
+
+  const signUp = async (email: string, password: string, displayName?: string) => {
+    localStorage.removeItem("coinkeeper_signed_out");
+    const redirectUrl = `${window.location.origin}/`;
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          display_name: displayName,
+        },
+      },
+    });
+    return { error: error as Error | null };
+  };
+
+  const signIn = async (email: string, password: string) => {
+    localStorage.removeItem("coinkeeper_signed_out");
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error: error as Error | null };
+  };
+
+  const signInWithGoogle = async (): Promise<{ error: Error | null; cancelled?: boolean }> => {
+    try {
+      localStorage.removeItem("coinkeeper_signed_out");
+      const fbUser = await fbSignInWithGoogle();
+      if (!fbUser) {
+        // User closed or dismissed the popup without signing in
+        return { error: null, cancelled: true };
+      }
+
+      const mappedUser: User = {
+        id: fbUser.uid,
+        app_metadata: { provider: "google" },
+        user_metadata: {
+          display_name: fbUser.displayName || fbUser.email?.split("@")[0] || "User",
+          avatar_url: fbUser.photoURL,
+        },
+        aud: "authenticated",
+        created_at: fbUser.metadata.creationTime || new Date().toISOString(),
+        email: fbUser.email || undefined,
+      };
+
+      const mockSession: Session = {
+        access_token: "firebase-token",
+        token_type: "bearer",
+        expires_in: 3600,
+        refresh_token: "firebase-refresh",
+        user: mappedUser,
+      };
+
+      setUser(mappedUser);
+      setSession(mockSession);
+
+      syncUserProfile(
+        fbUser.uid,
+        fbUser.displayName || fbUser.email?.split("@")[0] || "User",
+        fbUser.email || undefined
+      ).catch((err) => {
+        console.warn("Could not sync user profile:", err);
+      });
+
+      return { error: null, cancelled: false };
+    } catch (err: any) {
+      const isCancelled =
+        err?.code === "auth/popup-closed-by-user" ||
+        err?.code === "auth/cancelled-popup-request" ||
+        (err instanceof Error && err.message.includes("popup-closed-by-user"));
+
+      if (isCancelled) {
+        return { error: null, cancelled: true };
+      }
+      return { error: err as Error, cancelled: false };
     }
   };
 
   const signOut = async () => {
-    await Promise.allSettled([supabase.auth.signOut(), fbSignOutUser()]);
-    setUser(null);
-    setSession(null);
+    try {
+      localStorage.setItem("coinkeeper_signed_out", "true");
+      await Promise.allSettled([supabase.auth.signOut(), fbSignOutUser()]);
+    } finally {
+      setUser(null);
+      setSession(null);
+    }
   };
 
   return (

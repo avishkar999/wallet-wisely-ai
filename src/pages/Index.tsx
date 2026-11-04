@@ -43,6 +43,7 @@ import { MonthlyCycleBar } from "@/components/dashboard/MonthlyCycleBar";
 import { AdaptiveDashboardBuilder } from "@/components/dashboard/AdaptiveDashboardBuilder";
 import { MonthlyResetModal } from "@/components/dashboard/MonthlyResetModal";
 import { MonthlyWrappedModal } from "@/components/dashboard/MonthlyWrappedModal";
+import { BudgetPacingNotification } from "@/components/notifications/BudgetPacingNotification";
 import { MyMoneyAccountsCard } from "@/components/dashboard/MyMoneyAccountsCard";
 import { CashFlowModule } from "@/components/dashboard/CashFlowModule";
 import { NetWorthModule } from "@/components/dashboard/NetWorthModule";
@@ -60,6 +61,7 @@ import { MainDashboardLayout } from "@/components/dashboard/MainDashboardLayout"
 import { AddTransactionDialog } from "@/components/forms/AddTransactionDialog";
 import { SmartQuickAddTransactionDialog } from "@/components/forms/SmartQuickAddTransactionDialog";
 import { DailySpendingPatternsChart } from "@/components/analytics/DailySpendingPatternsChart";
+import { MonthlyInsightsWidget } from "@/components/dashboard/MonthlyInsightsWidget";
 
 const Index = () => {
   // Monthly cycles handling
@@ -206,7 +208,7 @@ const Index = () => {
               activeTab={activeTab}
               onTabChange={handleTabChange}
               isCollapsed={false}
-              onToggle={() => {}}
+              onToggle={() => setMobileMenuOpen(false)}
             />
           </SheetContent>
         </Sheet>
@@ -342,10 +344,8 @@ const Index = () => {
                 <Building2 className="w-3.5 h-3.5 text-primary" /> Connect Account
               </Button>
 
-              <Button variant="ghost" size="icon" className="relative h-8 w-8">
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full" />
-              </Button>
+              {/* Budget Pacing & Over-spending Alerts */}
+              <BudgetPacingNotification onNavigateTab={handleTabChange} />
             </div>
           </div>
         </header>
@@ -436,6 +436,7 @@ const AdaptiveDashboard = ({ onNavigateTab }: { onNavigateTab?: (tab: string) =>
       case "trends":
         return (
           <div key="trends" className="space-y-5">
+            <MonthlyInsightsWidget onNavigateTab={onNavigateTab} />
             <DailySpendingPatternsChart />
             <SpendingTrendsLineChart />
           </div>

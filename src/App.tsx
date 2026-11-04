@@ -28,6 +28,10 @@ function HomeRoute() {
     );
   }
 
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
   return (
     <ErrorBoundary fallbackTitle="Dashboard Display Error">
       <Index />

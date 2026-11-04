@@ -33,11 +33,15 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      const { error } = await signInWithGoogle();
+      const { error, cancelled } = await signInWithGoogle();
+      if (cancelled) {
+        // User closed the popup window without completing sign-in
+        return;
+      }
       if (error) {
         toast({
           title: "Google Sign-In Failed",
-          description: error.message || "Failed to authenticate with Google Firebase",
+          description: error.message || "Failed to authenticate with Google",
           variant: "destructive",
         });
       } else {
@@ -47,12 +51,19 @@ export default function Auth() {
         });
         navigate(redirectTo);
       }
-    } catch (err) {
-      toast({
-        title: "Google Sign-In Error",
-        description: err instanceof Error ? err.message : "Authentication error",
-        variant: "destructive",
-      });
+    } catch (err: any) {
+      const isCancelled =
+        err?.code === "auth/popup-closed-by-user" ||
+        err?.code === "auth/cancelled-popup-request" ||
+        (err instanceof Error && err.message.includes("popup-closed-by-user"));
+
+      if (!isCancelled) {
+        toast({
+          title: "Google Sign-In Error",
+          description: err instanceof Error ? err.message : "Authentication error",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

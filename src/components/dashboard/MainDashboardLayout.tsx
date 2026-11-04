@@ -40,6 +40,8 @@ import { FinancialConnectionModal } from "@/components/connection/FinancialConne
 import { ConnectionManagerDialog } from "@/components/connection/ConnectionManagerDialog";
 import { ConnectionStatus } from "@/components/connection/ConnectionStatus";
 import { DailySpendingPatternsChart } from "@/components/analytics/DailySpendingPatternsChart";
+import { MonthlyInsightsWidget } from "@/components/dashboard/MonthlyInsightsWidget";
+import { BudgetPacingAlertBanner } from "@/components/notifications/BudgetPacingNotification";
 
 interface MainDashboardLayoutProps {
   onNavigateTab?: (tab: string) => void;
@@ -168,6 +170,9 @@ export function MainDashboardLayout({ onNavigateTab }: MainDashboardLayoutProps)
           </Button>
         </div>
       )}
+
+      {/* Budget Pacing & Over-spending Warning Banner */}
+      <BudgetPacingAlertBanner onNavigateTab={onNavigateTab} />
 
       {/* =========================================================================
           1. WELCOME HERO SECTION (Utilizing existing 'card-hero' CSS utility class)
@@ -535,9 +540,10 @@ export function MainDashboardLayout({ onNavigateTab }: MainDashboardLayoutProps)
       )}
 
       {/* =========================================================================
-          4B. 30-DAY DAILY SPENDING PATTERNS & ACTIVITY SPIKES
+          4B. 30-DAY MONTHLY INSIGHTS (D3) & DAILY SPENDING PATTERNS
           ========================================================================= */}
-      <section>
+      <section className="space-y-5">
+        <MonthlyInsightsWidget onNavigateTab={onNavigateTab} />
         <DailySpendingPatternsChart />
       </section>
 
