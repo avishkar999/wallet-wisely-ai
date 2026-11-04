@@ -33,11 +33,12 @@ export function useDeleteMonthlySummary() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      let query = supabase.from("monthly_summaries").delete().eq("id", id);
-      if (user?.id) {
-        query = query.eq("user_id", user.id);
-      }
-      const { error } = await query;
+      if (!user) throw new Error("User not authenticated");
+      const { error } = await supabase
+        .from("monthly_summaries")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {

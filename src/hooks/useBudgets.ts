@@ -58,11 +58,14 @@ export function useUpdateBudget() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Budget> & { id: string }) => {
-      let query = supabase.from("budgets").update(updates).eq("id", id);
-      if (user?.id) {
-        query = query.eq("user_id", user.id);
-      }
-      const { data, error } = await query.select().single();
+      if (!user) throw new Error("User not authenticated");
+      const { data, error } = await supabase
+        .from("budgets")
+        .update(updates)
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select()
+        .single();
 
       if (error) throw error;
       return data;
@@ -79,11 +82,12 @@ export function useDeleteBudget() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      let query = supabase.from("budgets").delete().eq("id", id);
-      if (user?.id) {
-        query = query.eq("user_id", user.id);
-      }
-      const { error } = await query;
+      if (!user) throw new Error("User not authenticated");
+      const { error } = await supabase
+        .from("budgets")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -103,10 +107,11 @@ export function useRolloverBudgets() {
       const fromMonthStr = format(startOfMonth(fromMonth), "yyyy-MM-dd");
       const toMonthStr = format(startOfMonth(new Date()), "yyyy-MM-dd");
 
-      // Get budgets from previous month
+      // Get budgets from previous month for this user
       const { data: previousBudgets, error: fetchError } = await supabase
         .from("budgets")
         .select("*")
+        .eq("user_id", user.id)
         .eq("month", fromMonthStr);
 
       if (fetchError) throw fetchError;
@@ -142,12 +147,14 @@ export function useBudgetSummary(month?: Date) {
   const { data: transactions } = useQuery({
     queryKey: ["transactions-for-budget", user?.id, format(targetMonth, "yyyy-MM")],
     queryFn: async () => {
+      if (!user?.id) return [];
       const startOfMonthStr = format(startOfMonth(targetMonth), "yyyy-MM-dd");
       const endOfMonthStr = format(new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0), "yyyy-MM-dd");
 
       const { data, error } = await supabase
         .from("transactions")
         .select("*")
+        .eq("user_id", user.id)
         .gte("transaction_date", startOfMonthStr)
         .lte("transaction_date", endOfMonthStr)
         .eq("type", "expense");
