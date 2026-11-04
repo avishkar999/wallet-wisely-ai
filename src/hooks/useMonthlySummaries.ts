@@ -13,9 +13,11 @@ export function useMonthlySummaries() {
   return useQuery({
     queryKey: ["monthly_summaries", user?.id],
     queryFn: async () => {
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from("monthly_summaries")
         .select("*")
+        .eq("user_id", user.id)
         .order("month", { ascending: false });
 
       if (error) throw error;
@@ -27,10 +29,15 @@ export function useMonthlySummaries() {
 
 export function useDeleteMonthlySummary() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("monthly_summaries").delete().eq("id", id);
+      let query = supabase.from("monthly_summaries").delete().eq("id", id);
+      if (user?.id) {
+        query = query.eq("user_id", user.id);
+      }
+      const { error } = await query;
       if (error) throw error;
     },
     onSuccess: () => {
@@ -97,6 +104,7 @@ export function useMonthlyArchive() {
         const { data: txs, error } = await supabase
           .from("transactions")
           .select("amount, type, category, transaction_date")
+          .eq("user_id", user.id)
           .lt("transaction_date", `${currentMonth}-01`);
 
         if (error) throw error;

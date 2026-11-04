@@ -52,15 +52,15 @@ export function useAddDebt() {
 
 export function useUpdateDebt() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: DebtUpdate & { id: string }) => {
-      const { data, error } = await supabase
-        .from("debts")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      let query = supabase.from("debts").update(updates).eq("id", id);
+      if (user?.id) {
+        query = query.eq("user_id", user.id);
+      }
+      const { data, error } = await query.select().single();
       
       if (error) throw error;
       return data;
@@ -73,13 +73,15 @@ export function useUpdateDebt() {
 
 export function useDeleteDebt() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("debts")
-        .delete()
-        .eq("id", id);
+      let query = supabase.from("debts").delete().eq("id", id);
+      if (user?.id) {
+        query = query.eq("user_id", user.id);
+      }
+      const { error } = await query;
       
       if (error) throw error;
     },
@@ -94,7 +96,9 @@ export function useDebtSummary() {
 
   const totalDebt = debts.reduce((sum, d) => sum + Number(d.outstanding_amount), 0);
   const totalMonthlyPayment = debts.reduce((sum, d) => sum + Number(d.minimum_payment), 0);
-  const avgInterestRate = debts.length > 0
+  const avgInterestRate = totalDebt > 0
+    ? debts.reduce((sum, d) => sum + (Number(d.outstanding_amount) * Number(d.interest_rate)), 0) / totalDebt
+    : debts.length > 0
     ? debts.reduce((sum, d) => sum + Number(d.interest_rate), 0) / debts.length
     : 0;
 

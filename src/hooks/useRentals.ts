@@ -144,15 +144,15 @@ export function useAddRental() {
 
 export function useUpdateRental() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Rental> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("rentals")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      let query = supabase.from("rentals").update(updates).eq("id", id);
+      if (user?.id) {
+        query = query.eq("user_id", user.id);
+      }
+      const { data, error } = await query.select().single();
       
       if (error) throw error;
       return data;
@@ -165,13 +165,15 @@ export function useUpdateRental() {
 
 export function useDeleteRental() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("rentals")
-        .delete()
-        .eq("id", id);
+      let query = supabase.from("rentals").delete().eq("id", id);
+      if (user?.id) {
+        query = query.eq("user_id", user.id);
+      }
+      const { error } = await query;
       
       if (error) throw error;
     },

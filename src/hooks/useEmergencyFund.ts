@@ -12,10 +12,12 @@ export function useEmergencyFund() {
   return useQuery({
     queryKey: ["emergency_fund", user?.id],
     queryFn: async () => {
+      if (!user?.id) return null;
       const { data, error } = await supabase
         .from("emergency_fund")
         .select("*")
-        .single();
+        .eq("user_id", user.id)
+        .maybeSingle();
 
       if (error && error.code !== "PGRST116") throw error;
       return data as EmergencyFund | null;

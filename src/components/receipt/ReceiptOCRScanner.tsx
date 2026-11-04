@@ -224,6 +224,7 @@ export function ReceiptOCRScanner({ onTransactionSaved }: { onTransactionSaved?:
       // 1. Save to Supabase
       if (user?.id) {
         await addTransaction.mutateAsync({
+          name: extractedData.merchant || "UPI Transaction",
           amount: extractedData.amount,
           type: extractedData.type,
           category: extractedData.category as any,

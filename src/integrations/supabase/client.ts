@@ -33,12 +33,15 @@ const DEMO_SESSION = {
 
 function getStoredSession() {
   try {
+    const isExplicitlySignedOut = localStorage.getItem("coinkeeper_signed_out") === "true";
+    if (isExplicitlySignedOut) return null;
+
     const raw = localStorage.getItem("coinkeeper_session_v3");
     if (raw) return JSON.parse(raw);
+    return null;
   } catch {
-    // ignore
+    return null;
   }
-  return DEMO_SESSION;
 }
 
 function setStoredSession(session: any) {

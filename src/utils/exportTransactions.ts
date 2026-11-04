@@ -27,33 +27,40 @@ const methodLabels: Record<string, string> = {
 };
 
 export function exportToCSV(transactions: Transaction[], filename: string) {
-  const headers = ["Date", "Name", "Type", "Category", "Amount (₹)", "Payment Method", "Description"];
+  const headers = ["Date", "Name", "Type", "Category", "Amount (₹)", "Payment Method", "Description", "Tags"];
   
-  const rows = transactions.map(txn => [
-    txn.transaction_date,
-    txn.name,
-    txn.type === "income" ? "Income" : "Expense",
-    categoryLabels[txn.category] || txn.category,
-    txn.amount.toString(),
-    methodLabels[txn.payment_method] || txn.payment_method,
-    txn.description || "",
-  ]);
+  const rows = transactions.map(txn => {
+    const txnTags = Array.isArray((txn as any).tags) ? (txn as any).tags.join("; ") : "";
+    return [
+      txn.transaction_date || "",
+      txn.name || "Transaction",
+      txn.type === "income" ? "Income" : "Expense",
+      categoryLabels[txn.category] || txn.category || "Other",
+      Number(txn.amount || 0).toFixed(2),
+      methodLabels[txn.payment_method] || txn.payment_method || "Other",
+      txn.description || "",
+      txnTags,
+    ];
+  });
 
-  const csvContent = [
+  const csvContent = "\uFEFF" + [
     headers.join(","),
-    ...rows.map(row => row.map(cell => `"${cell.replace(/"/g, '""')}"`).join(","))
-  ].join("\n");
+    ...rows.map(row =>
+      row.map(cell => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(",")
+    ),
+  ].join("\r\n");
 
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
   
   link.setAttribute("href", url);
-  link.setAttribute("download", `${filename}.csv`);
+  link.setAttribute("download", `${filename.endsWith(".csv") ? filename : `${filename}.csv`}`);
   link.style.visibility = "hidden";
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 export function exportToExcel(transactions: Transaction[], filename: string) {

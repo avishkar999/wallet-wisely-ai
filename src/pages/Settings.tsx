@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,12 @@ export function SettingsPage() {
   const [displayName, setDisplayName] = useState(profile?.display_name || "");
   const [currency, setCurrency] = useState(ckProfile.currency || "INR");
   const [isResetting, setIsResetting] = useState(false);
+
+  useEffect(() => {
+    if (profile?.display_name) {
+      setDisplayName(profile.display_name);
+    }
+  }, [profile?.display_name]);
 
   const handleSaveProfile = () => {
     if (!displayName.trim()) {

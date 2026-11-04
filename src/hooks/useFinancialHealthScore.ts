@@ -29,9 +29,9 @@ export function useFinancialHealthScore() {
   let score = 0;
 
   // 1. Savings Rate Score (0-25 points)
-  // 20%+ savings rate = 25 points
+  // 20%+ savings rate = 25 points, negative savings rate is clamped at 0
   if (income > 0) {
-    const savingsScore = Math.min(25, (savingsRate / 20) * 25);
+    const savingsScore = Math.max(0, Math.min(25, (savingsRate / 20) * 25));
     score += savingsScore;
   }
 
@@ -49,7 +49,7 @@ export function useFinancialHealthScore() {
   // 6 months expenses = 25 points
   if (expenses > 0) {
     const monthsCovered = totalCurrentValue / expenses;
-    const emergencyScore = Math.min(25, (monthsCovered / 6) * 25);
+    const emergencyScore = Math.max(0, Math.min(25, (monthsCovered / 6) * 25));
     score += emergencyScore;
   } else if (totalCurrentValue > 0) {
     score += 25; // Has investments, no expenses tracked yet
@@ -61,8 +61,8 @@ export function useFinancialHealthScore() {
     score += 20;
   }
 
-  // Round the score
-  const finalScore = Math.round(score);
+  // Round and clamp the score strictly between 0 and 100
+  const finalScore = Math.max(0, Math.min(100, Math.round(score)));
 
   // Calculate individual metrics for display
   const debtRatio = income > 0 ? Math.round((totalMonthlyPayment / income) * 100) : 0;

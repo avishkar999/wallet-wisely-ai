@@ -2,6 +2,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import {
+  createFirestoreTransaction,
+  deleteFirestoreTransaction,
+  FirestoreTransaction,
+} from "@/services/firestoreService";
 
 type Transaction = Tables<"transactions">;
 type TransactionInsert = TablesInsert<"transactions">;
@@ -169,6 +174,24 @@ export function useAddTransaction() {
       console.log("[TransactionDebug:useAddTransaction] Step 6: Invalidating queries & initiating dashboard refresh...");
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["monthly_summaries"] });
+
+      // Mirror to Firestore for full real-time budget synchronization
+      if (data?.id && data.user_id) {
+        const firestoreTx: FirestoreTransaction = {
+          id: data.id,
+          userId: data.user_id,
+          amount: Number(data.amount),
+          type: data.type as any,
+          category: data.category,
+          date: data.transaction_date,
+          description: data.description || data.name,
+          createdAt: data.created_at || new Date().toISOString(),
+          updatedAt: data.created_at || new Date().toISOString(),
+        };
+        createFirestoreTransaction(firestoreTx).catch((err) => {
+          console.warn("[TransactionDebug] Non-critical: Firestore background sync skipped:", err);
+        });
+      }
     },
     onError: (error: any) => {
       console.error("[TransactionDebug:useAddTransaction] Mutation error handler triggered:", {
@@ -222,12 +245,12 @@ export function useUpdateTransaction() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: TransactionUpdate & { id: string }) => {
-      const { data, error } = await supabase
-        .from("transactions")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      const { data: { user } } = await supabase.auth.getUser();
+      let query = supabase.from("transactions").update(updates).eq("id", id);
+      if (user?.id) {
+        query = query.eq("user_id", user.id);
+      }
+      const { data, error } = await query.select().single();
       
       if (error) throw error;
       return data;
@@ -243,12 +266,17 @@ export function useDeleteTransaction() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("transactions")
-        .delete()
-        .eq("id", id);
+      const { data: { user } } = await supabase.auth.getUser();
+      let query = supabase.from("transactions").delete().eq("id", id);
+      if (user?.id) {
+        query = query.eq("user_id", user.id);
+      }
+      const { error } = await query;
       
       if (error) throw error;
+
+      // Also clean up from Firestore
+      deleteFirestoreTransaction(id).catch(() => {});
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
@@ -260,7 +288,8 @@ export function useDeleteTransaction() {
 export function useFinancialSummary() {
   const { data: transactions = [], isLoading } = useTransactions();
 
-  const currentMonth = new Date().toISOString().slice(0, 7);
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const currentMonthTransactions = transactions.filter(t => 
     t.transaction_date.startsWith(currentMonth)
   );

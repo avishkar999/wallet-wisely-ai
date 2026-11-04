@@ -14,9 +14,11 @@ export function useBudgets(month?: Date) {
   return useQuery({
     queryKey: ["budgets", user?.id, targetMonth],
     queryFn: async () => {
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from("budgets")
         .select("*")
+        .eq("user_id", user.id)
         .eq("month", targetMonth)
         .order("category");
 
@@ -52,15 +54,15 @@ export function useAddBudget() {
 
 export function useUpdateBudget() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Budget> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("budgets")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
+      let query = supabase.from("budgets").update(updates).eq("id", id);
+      if (user?.id) {
+        query = query.eq("user_id", user.id);
+      }
+      const { data, error } = await query.select().single();
 
       if (error) throw error;
       return data;
@@ -73,10 +75,15 @@ export function useUpdateBudget() {
 
 export function useDeleteBudget() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("budgets").delete().eq("id", id);
+      let query = supabase.from("budgets").delete().eq("id", id);
+      if (user?.id) {
+        query = query.eq("user_id", user.id);
+      }
+      const { error } = await query;
       if (error) throw error;
     },
     onSuccess: () => {

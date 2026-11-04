@@ -110,9 +110,11 @@
          0
        );
      }
-     // All debts combined (simplified)
+     // All debts combined (balance-weighted)
      const avgRate =
-       debts.length > 0
+       totalDebt > 0
+         ? debts.reduce((sum, d) => sum + Number(d.outstanding_amount) * Number(d.interest_rate), 0) / totalDebt
+         : debts.length > 0
          ? debts.reduce((sum, d) => sum + Number(d.interest_rate), 0) / debts.length
          : 0;
      return calculatePayoff(totalDebt, totalMonthlyPayment, avgRate, 0);
@@ -128,7 +130,9 @@
        );
      }
      const avgRate =
-       debts.length > 0
+       totalDebt > 0
+         ? debts.reduce((sum, d) => sum + Number(d.outstanding_amount) * Number(d.interest_rate), 0) / totalDebt
+         : debts.length > 0
          ? debts.reduce((sum, d) => sum + Number(d.interest_rate), 0) / debts.length
          : 0;
      return calculatePayoff(totalDebt, totalMonthlyPayment, avgRate, extraPayment);

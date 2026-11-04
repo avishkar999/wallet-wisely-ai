@@ -75,21 +75,38 @@ export function useAutoRecurring() {
       const rows: Record<string, unknown>[] = [];
       const updates: { id: string; next_due_date: string }[] = [];
 
+      // Pre-fetch any already generated auto-recurring transactions in the catch-up window
+      const { data: existingTxs } = await supabase
+        .from("transactions")
+        .select("name, transaction_date")
+        .eq("user_id", user.id)
+        .like("description", `%${AUTO_RECURRING_MARKER}%`);
+
+      const existingSet = new Set(
+        (existingTxs || []).map((t) => `${t.name}::${t.transaction_date}`)
+      );
+
       for (const item of recurring) {
         let due = startOfDay(new Date(item.next_due_date));
         let count = 0;
 
         while (!isAfter(due, today) && count < MAX_CATCHUP_OCCURRENCES) {
-          rows.push({
-            user_id: user.id,
-            name: item.title,
-            amount: Number(item.amount),
-            type: item.type,
-            category: item.category,
-            payment_method: "auto_pay",
-            transaction_date: format(due, "yyyy-MM-dd"),
-            description: `${AUTO_RECURRING_MARKER} (${item.frequency})`,
-          });
+          const formattedDate = format(due, "yyyy-MM-dd");
+          const dedupeKey = `${item.title}::${formattedDate}`;
+
+          if (!existingSet.has(dedupeKey)) {
+            rows.push({
+              user_id: user.id,
+              name: item.title,
+              amount: Number(item.amount),
+              type: item.type,
+              category: item.category,
+              payment_method: "auto_pay",
+              transaction_date: formattedDate,
+              description: `${AUTO_RECURRING_MARKER} (${item.frequency})`,
+            });
+            existingSet.add(dedupeKey);
+          }
           due = startOfDay(getNextDueDate(item.frequency, due));
           count++;
         }
@@ -100,6 +117,18 @@ export function useAutoRecurring() {
       }
 
       if (rows.length === 0) {
+        // Still apply next_due_date advances if catchup occurred without new rows
+        if (updates.length > 0) {
+          await Promise.all(
+            updates.map((u) =>
+              supabase
+                .from("recurring_transactions")
+                .update({ next_due_date: u.next_due_date })
+                .eq("id", u.id)
+                .eq("user_id", user.id)
+            )
+          );
+        }
         setStatus({ running: false, lastRunAt: new Date(), lastPosted: 0 });
         return;
       }

@@ -260,15 +260,21 @@ export function TransactionsHistory() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => openExportModal("transactions")}
-                className="text-xs h-8"
-                title="Configure and download CSV spreadsheet"
+                onClick={handleExportCSV}
+                className="text-xs h-8 font-medium gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+                title="Download current filtered transactions as CSV file"
               >
-                <Download className="w-3.5 h-3.5 mr-1.5 text-primary" />
-                Export CSV
+                <Download className="w-3.5 h-3.5" />
+                Export to CSV
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExportExcel} className="text-xs h-8">
-                <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportExcel}
+                className="text-xs h-8 gap-1.5"
+                title="Download Excel spreadsheet"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
                 Excel
               </Button>
               <Button
@@ -359,13 +365,26 @@ export function TransactionsHistory() {
 
       {/* Transactions List */}
       <Card variant="elevated">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <CardTitle className="flex items-center gap-2">
               <Receipt className="w-5 h-5 text-primary" />
               Transactions ({filteredTransactions.length})
-            </span>
-          </CardTitle>
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportCSV}
+                disabled={filteredTransactions.length === 0}
+                className="text-xs h-7.5 px-3 gap-1.5 font-medium border-primary/30 text-primary hover:bg-primary/10"
+                title="Download displayed transactions to CSV format"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Export to CSV
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {filteredTransactions.length === 0 ? (

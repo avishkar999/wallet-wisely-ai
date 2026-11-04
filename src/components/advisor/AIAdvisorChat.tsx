@@ -26,12 +26,14 @@ export function AIAdvisorChat() {
   const { totalDebt, avgInterestRate: avgInterest, totalMonthlyPayment: totalMonthly } = useDebtSummary();
   const { totalCurrentValue: totalValue, overallChangePercent: returnPercentage } = useInvestmentSummary();
   
-  // Convert categoryTotals to array format
-  const byCategory = Object.entries(categoryTotals).map(([category, amount]) => ({
-    category,
-    amount,
-    percentage: totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0
-  }));
+  // Convert categoryTotals to array format and sort by highest spend first
+  const byCategory = Object.entries(categoryTotals)
+    .map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: totalExpenses > 0 ? Math.round((amount / totalExpenses) * 100) : 0
+    }))
+    .sort((a, b) => b.amount - a.amount);
 
   const getInitialMessage = () => {
     if (totalIncome === 0 && totalExpenses === 0 && totalDebt === 0 && totalValue === 0) {
