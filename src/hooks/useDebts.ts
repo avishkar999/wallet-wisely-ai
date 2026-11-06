@@ -56,11 +56,14 @@ export function useUpdateDebt() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: DebtUpdate & { id: string }) => {
-      let query = supabase.from("debts").update(updates).eq("id", id);
-      if (user?.id) {
-        query = query.eq("user_id", user.id);
-      }
-      const { data, error } = await query.select().single();
+      if (!user) throw new Error("Not authenticated");
+      const { data, error } = await supabase
+        .from("debts")
+        .update(updates)
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select()
+        .single();
       
       if (error) throw error;
       return data;
@@ -77,11 +80,12 @@ export function useDeleteDebt() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      let query = supabase.from("debts").delete().eq("id", id);
-      if (user?.id) {
-        query = query.eq("user_id", user.id);
-      }
-      const { error } = await query;
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("debts")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
       
       if (error) throw error;
     },

@@ -9,6 +9,7 @@ import { useAddTransaction } from "@/hooks/useTransactions";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Constants } from "@/integrations/supabase/types";
+import { PREDEFINED_INCOME_CATEGORIES } from "@/types/income";
 
 interface AddTransactionDialogProps {
   defaultType?: "income" | "expense";
@@ -347,11 +348,19 @@ export function AddTransactionDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-56">
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {categoryLabels[cat] || cat}
-                    </SelectItem>
-                  ))}
+                  {type === "income" ? (
+                    PREDEFINED_INCOME_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    categories.map((cat) => (
+                      <SelectItem key={cat} value={cat}>
+                        {categoryLabels[cat] || cat}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -401,13 +410,19 @@ export function AddTransactionDialog({
               size="sm"
               disabled={isSubmitting || addTransaction.isPending}
               onClick={handleButtonClick}
-              className="text-xs h-8 bg-primary text-primary-foreground font-semibold min-w-28 shadow-sm hover:opacity-90"
+              className={`text-xs h-8 font-semibold min-w-28 shadow-sm hover:opacity-90 ${
+                type === "income"
+                  ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+                  : "bg-primary text-primary-foreground"
+              }`}
             >
               {isSubmitting || addTransaction.isPending ? (
                 <span className="flex items-center gap-1.5">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   Saving...
                 </span>
+              ) : type === "income" ? (
+                "Add Income"
               ) : (
                 "Add Transaction"
               )}

@@ -200,3 +200,40 @@ export interface BankPresetProfile {
 5. **UI Integration**: Connect the import trigger into `Index.tsx` header and `TransactionsHistory.tsx`.
 6. **Dashboard Filtering**: Add category filter tabs to the dashboard and connect to card recalculations.
 7. **Verification**: Run TypeScript compilation and build tests to verify zero regressions.
+
+---
+
+## 6. Income Management Module (Completed)
+
+A dedicated, comprehensive Income Management system integrated into WalletWisely:
+
+- **Dedicated Navigation**: Added "Income" (`ArrowDownLeft` icon) into `src/components/layout/Sidebar.tsx` and routed as a lazy-loaded route in `src/pages/Index.tsx`.
+- **13 Predefined Income Categories**:
+  1. Salary
+  2. Freelancing
+  3. Business Income
+  4. Internship Stipend
+  5. Investment Returns
+  6. Dividends
+  7. Interest Income
+  8. Rental Income
+  9. Affiliate Marketing
+  10. Content Creation
+  11. Gifts and Rewards
+  12. Refunds and Cashback
+  13. Other Income
+  - Support for creating custom income categories with real-time context synchronization.
+- **Income Transaction Management**:
+  - `IncomeDialog.tsx`: Modal supporting title/source, numerical amount, category select, date received, payment method (UPI, Bank Transfer, Cash, Card, Other), optional description/notes, and recurring income toggle.
+  - Interactive table supporting search by title/description, category filtering, payment method filtering, period filtering (Current Month, Last 30 Days, Last 90 Days, This Year, All Time), sorting by date and amount.
+  - View Details modal and Delete Confirmation alert dialog.
+- **Dashboard & Financial Metrics Integration**:
+  - Key financial metrics: Total Income, Total Expenses, Net Savings (`Total Income - Total Expenses`), and Savings Rate (`(Net Savings / Total Income) * 100`, safe against zero-income division).
+  - Secondary metrics: Recurring vs One-Off breakdown, average daily inflow, and top income source.
+  - Interactive Recharts Visual Overview (`IncomeOverviewCharts.tsx`):
+    - Comparative Grouped Bar chart: Total Income vs Total Expenses vs Net Savings across 6 months.
+    - Area Trend chart: Monthly Income curves vs Cumulative Savings Growth.
+    - Donut & Distribution list: Income category breakdown with percentages and color codes.
+  - Direct navigation link from main dashboard "Income Inflow" card to the Income Management module.
+- **Security & Multi-Tenant Isolation**: Scoped by authenticated user (`user_id`), integrated with Supabase and Firestore synchronization.
+

@@ -70,7 +70,7 @@ export function AIAdvisorChat() {
       if (byCategory.length === 0) {
         return "You haven't recorded any expenses yet. Start adding your daily expenses to get personalized spending insights!";
       }
-      const topCategories = byCategory.slice(0, 3);
+      const topCategories = [...byCategory].sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 3);
       const suggestions = topCategories.map(c => 
         `${c.category}: ₹${c.amount.toLocaleString('en-IN')} (${c.percentage}%)`
       ).join(', ');

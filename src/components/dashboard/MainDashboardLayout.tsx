@@ -42,6 +42,7 @@ import { ConnectionStatus } from "@/components/connection/ConnectionStatus";
 import { DailySpendingPatternsChart } from "@/components/analytics/DailySpendingPatternsChart";
 import { MonthlyInsightsWidget } from "@/components/dashboard/MonthlyInsightsWidget";
 import { BudgetPacingAlertBanner } from "@/components/notifications/BudgetPacingNotification";
+import { BudgetGuard } from "@/components/notifications/BudgetGuard";
 
 interface MainDashboardLayoutProps {
   onNavigateTab?: (tab: string) => void;
@@ -170,6 +171,9 @@ export function MainDashboardLayout({ onNavigateTab }: MainDashboardLayoutProps)
           </Button>
         </div>
       )}
+
+      {/* BudgetGuard: Live Transaction Polling against 80% & 100% Limits */}
+      <BudgetGuard onNavigateTab={onNavigateTab} />
 
       {/* Budget Pacing & Over-spending Warning Banner */}
       <BudgetPacingAlertBanner onNavigateTab={onNavigateTab} />
@@ -482,12 +486,16 @@ export function MainDashboardLayout({ onNavigateTab }: MainDashboardLayoutProps)
             </div>
 
             {/* Income Received */}
-            <div className="card-elevated p-5 flex flex-col justify-between glass-hover">
+            <div
+              onClick={() => onNavigateTab?.("income")}
+              className="card-elevated p-5 flex flex-col justify-between glass-hover cursor-pointer group hover:border-emerald-500/40 transition-all"
+              title="Click to open Income Management Module"
+            >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-emerald-500 transition-colors">
                   Income Inflow
                 </span>
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500 group-hover:scale-110 transition-transform">
                   <ArrowDownLeft className="w-4 h-4" />
                 </div>
               </div>
@@ -495,8 +503,9 @@ export function MainDashboardLayout({ onNavigateTab }: MainDashboardLayoutProps)
                 <span className="text-2xl font-bold font-mono text-emerald-500 block">
                   {isTxLoading ? "…" : formatMoney(income)}
                 </span>
-                <span className="text-[11px] text-muted-foreground">
-                  Verified salary / deposits
+                <span className="text-[11px] text-muted-foreground flex items-center justify-between">
+                  <span>Verified salary / deposits</span>
+                  <span className="text-[10px] text-emerald-500 font-semibold group-hover:underline">Manage →</span>
                 </span>
               </div>
               <div className="pt-2 border-t border-border/20 text-[11px] text-muted-foreground flex justify-between">

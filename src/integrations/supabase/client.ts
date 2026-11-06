@@ -33,7 +33,9 @@ const DEMO_SESSION = {
 
 function getStoredSession() {
   try {
-    const isExplicitlySignedOut = localStorage.getItem("coinkeeper_signed_out") === "true";
+    const isExplicitlySignedOut =
+      localStorage.getItem("coinkeeper_signed_out_v3") === "true" ||
+      localStorage.getItem("coinkeeper_signed_out") === "true";
     if (isExplicitlySignedOut) return null;
 
     const raw = localStorage.getItem("coinkeeper_session_v3");
@@ -368,6 +370,12 @@ function createMockSupabaseClient(): any {
         return { data: { user: session?.user ?? null }, error: null };
       },
       signInWithPassword: async ({ email }: { email: string; password?: string }) => {
+        try {
+          localStorage.removeItem("coinkeeper_signed_out_v3");
+          localStorage.removeItem("coinkeeper_signed_out");
+        } catch (_e) {
+          // ignore
+        }
         const session = {
           ...DEMO_SESSION,
           user: {
@@ -381,6 +389,12 @@ function createMockSupabaseClient(): any {
         return { data: { user: session.user, session }, error: null };
       },
       signUp: async ({ email, options }: { email: string; password?: string; options?: any }) => {
+        try {
+          localStorage.removeItem("coinkeeper_signed_out_v3");
+          localStorage.removeItem("coinkeeper_signed_out");
+        } catch (_e) {
+          // ignore
+        }
         const displayName = options?.data?.display_name || (email ? email.split("@")[0] : "Avishkar");
         const session = {
           ...DEMO_SESSION,
@@ -396,6 +410,12 @@ function createMockSupabaseClient(): any {
       },
       signOut: async () => {
         setStoredSession(null);
+        try {
+          localStorage.setItem("coinkeeper_signed_out_v3", "true");
+          localStorage.setItem("coinkeeper_signed_out", "true");
+        } catch (_e) {
+          // ignore
+        }
         authListeners.forEach((fn) => fn("SIGNED_OUT", null));
         return { error: null };
       },

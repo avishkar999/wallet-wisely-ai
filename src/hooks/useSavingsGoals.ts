@@ -64,13 +64,16 @@ export function useAddSavingsGoal() {
 
 export function useUpdateSavingsGoal() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: SavingsGoalUpdate) => {
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("savings_goals")
         .update(updates)
         .eq("id", id)
+        .eq("user_id", user.id)
         .select()
         .single();
 
@@ -85,13 +88,16 @@ export function useUpdateSavingsGoal() {
 
 export function useDeleteSavingsGoal() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!user) throw new Error("Not authenticated");
       const { error } = await supabase
         .from("savings_goals")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user.id);
 
       if (error) throw error;
     },

@@ -22,6 +22,7 @@ import {
   DatabaseZap,
   Layers,
   Coins,
+  ArrowDownLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ interface SidebarProps {
 
 const navItems = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "income", label: "Income", icon: ArrowDownLeft },
   { id: "accounts", label: "My Money", icon: Wallet },
   { id: "tracker", label: "Daily Tracker", icon: Receipt },
   { id: "budget", label: "Budget & Flow", icon: Target },

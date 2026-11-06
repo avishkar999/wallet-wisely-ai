@@ -52,13 +52,16 @@ export function useAddInvestment() {
 
 export function useUpdateInvestment() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: InvestmentUpdate & { id: string }) => {
+      if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("investments")
         .update(updates)
         .eq("id", id)
+        .eq("user_id", user.id)
         .select()
         .single();
       
@@ -73,13 +76,16 @@ export function useUpdateInvestment() {
 
 export function useDeleteInvestment() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!user) throw new Error("Not authenticated");
       const { error } = await supabase
         .from("investments")
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+        .eq("user_id", user.id);
       
       if (error) throw error;
     },

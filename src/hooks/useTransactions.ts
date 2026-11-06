@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { format } from "date-fns";
 import {
   createFirestoreTransaction,
   deleteFirestoreTransaction,
@@ -242,36 +243,45 @@ export function useBatchAddTransactions() {
 
 export function useUpdateTransaction() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: TransactionUpdate & { id: string }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      let query = supabase.from("transactions").update(updates).eq("id", id);
-      if (user?.id) {
-        query = query.eq("user_id", user.id);
-      }
-      const { data, error } = await query.select().single();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const targetUserId = sessionData?.session?.user?.id || user?.id || "2e8b61e5-3277-4a3f-924f-9b163096171b";
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .update(updates)
+        .eq("id", id)
+        .eq("user_id", targetUserId)
+        .select()
+        .single();
       
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["monthly_summaries"] });
     },
   });
 }
 
 export function useDeleteTransaction() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      let query = supabase.from("transactions").delete().eq("id", id);
-      if (user?.id) {
-        query = query.eq("user_id", user.id);
-      }
-      const { error } = await query;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const targetUserId = sessionData?.session?.user?.id || user?.id || "2e8b61e5-3277-4a3f-924f-9b163096171b";
+
+      const { error } = await supabase
+        .from("transactions")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", targetUserId);
       
       if (error) throw error;
 
@@ -280,6 +290,7 @@ export function useDeleteTransaction() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["monthly_summaries"] });
     },
   });
 }
@@ -288,8 +299,7 @@ export function useDeleteTransaction() {
 export function useFinancialSummary() {
   const { data: transactions = [], isLoading } = useTransactions();
 
-  const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const currentMonth = format(new Date(), "yyyy-MM");
   const currentMonthTransactions = transactions.filter(t => 
     t.transaction_date.startsWith(currentMonth)
   );

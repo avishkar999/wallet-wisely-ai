@@ -8,19 +8,21 @@ import { InvestmentGrowth } from "@/components/dashboard/InvestmentGrowth";
 import { QuickActionsCompact } from "@/components/dashboard/QuickActionsCompact";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { SpendingBreakdown } from "@/components/dashboard/SpendingBreakdown";
-import { ExpenseTracker } from "@/components/dashboard/ExpenseTracker";
-import { InvestmentScanner } from "@/components/investments/InvestmentScanner";
-import { DebtAnalyzer } from "@/components/debts/DebtAnalyzer";
-import { AIAdvisorChat } from "@/components/advisor/AIAdvisorChat";
-import { SettingsPage } from "@/pages/Settings";
-import { CalendarPage } from "@/pages/Calendar";
-import { DailySpendingTracker } from "@/components/tracker/DailySpendingTracker";
-import { BudgetManager } from "@/components/budget/BudgetManager";
 import { BudgetOverview } from "@/components/budget/BudgetOverview";
-import { TransactionsHistory } from "@/components/transactions/TransactionsHistory";
-import { SpendingAnalytics } from "@/components/analytics/SpendingAnalytics";
 import { GoalTracker } from "@/components/goals/GoalTracker";
-import { RentalManager } from "@/components/rentals/RentalManager";
+
+const ExpenseTracker = React.lazy(() => import("@/components/dashboard/ExpenseTracker").then(m => ({ default: m.ExpenseTracker })));
+const InvestmentScanner = React.lazy(() => import("@/components/investments/InvestmentScanner").then(m => ({ default: m.InvestmentScanner })));
+const DebtAnalyzer = React.lazy(() => import("@/components/debts/DebtAnalyzer").then(m => ({ default: m.DebtAnalyzer })));
+const AIAdvisorChat = React.lazy(() => import("@/components/advisor/AIAdvisorChat").then(m => ({ default: m.AIAdvisorChat })));
+const SettingsPage = React.lazy(() => import("@/pages/Settings").then(m => ({ default: m.SettingsPage })));
+const CalendarPage = React.lazy(() => import("@/pages/Calendar").then(m => ({ default: m.CalendarPage })));
+const DailySpendingTracker = React.lazy(() => import("@/components/tracker/DailySpendingTracker").then(m => ({ default: m.DailySpendingTracker })));
+const BudgetManager = React.lazy(() => import("@/components/budget/BudgetManager").then(m => ({ default: m.BudgetManager })));
+const TransactionsHistory = React.lazy(() => import("@/components/transactions/TransactionsHistory").then(m => ({ default: m.TransactionsHistory })));
+const SpendingAnalytics = React.lazy(() => import("@/components/analytics/SpendingAnalytics").then(m => ({ default: m.SpendingAnalytics })));
+const RentalManager = React.lazy(() => import("@/components/rentals/RentalManager").then(m => ({ default: m.RentalManager })));
+const IncomeManager = React.lazy(() => import("@/components/income/IncomeManager").then(m => ({ default: m.IncomeManager })));
 import { Bell, Search, Menu, Sparkles, Sliders, Plus, User, Layers, Wallet, CreditCard, UploadCloud, Target, Scan, Download, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,11 +31,11 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useMonthlyReset } from "@/hooks/useMonthlyReset";
 import { useMonthlyArchive } from "@/hooks/useMonthlySummaries";
-import { MonthlyHistory } from "@/components/history/MonthlyHistory";
+const MonthlyHistory = React.lazy(() => import("@/components/history/MonthlyHistory").then(m => ({ default: m.MonthlyHistory })));
 import { MonthlySummaryCard } from "@/components/dashboard/MonthlySummaryCard";
 import { SpendingTrendsLineChart } from "@/components/analytics/SpendingTrendsLineChart";
 import { useAutoRecurring } from "@/hooks/useAutoRecurring";
-import { RecurringAudit } from "@/components/recurring/RecurringAudit";
+const RecurringAudit = React.lazy(() => import("@/components/recurring/RecurringAudit").then(m => ({ default: m.RecurringAudit })));
 
 // CoinKeeper OS Components
 import { useCoinKeeper } from "@/contexts/CoinKeeperContext";
@@ -43,13 +45,14 @@ import { MonthlyCycleBar } from "@/components/dashboard/MonthlyCycleBar";
 import { AdaptiveDashboardBuilder } from "@/components/dashboard/AdaptiveDashboardBuilder";
 import { MonthlyResetModal } from "@/components/dashboard/MonthlyResetModal";
 import { MonthlyWrappedModal } from "@/components/dashboard/MonthlyWrappedModal";
-import { BudgetPacingNotification } from "@/components/notifications/BudgetPacingNotification";
+import { NotificationCenter } from "@/components/notifications/NotificationCenter";
+import { BudgetGuard } from "@/components/notifications/BudgetGuard";
 import { MyMoneyAccountsCard } from "@/components/dashboard/MyMoneyAccountsCard";
 import { CashFlowModule } from "@/components/dashboard/CashFlowModule";
 import { NetWorthModule } from "@/components/dashboard/NetWorthModule";
 import { PersonalFinancialRulesCard } from "@/components/dashboard/PersonalFinancialRulesCard";
 import { SubscriptionImpactCard } from "@/components/dashboard/SubscriptionImpactCard";
-import { SubscriptionManager } from "@/components/subscriptions/SubscriptionManager";
+const SubscriptionManager = React.lazy(() => import("@/components/subscriptions/SubscriptionManager").then(m => ({ default: m.SubscriptionManager })));
 import { FinancialConnectionModal } from "@/components/connection/FinancialConnectionModal";
 import { ConnectionStatus } from "@/components/connection/ConnectionStatus";
 import { PersonalizationOnboarding } from "@/components/onboarding/PersonalizationOnboarding";
@@ -104,8 +107,21 @@ const Index = () => {
     setMobileMenuOpen(false);
   };
 
+  useEffect(() => {
+    const handleCustomNav = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        handleTabChange(customEvent.detail);
+      }
+    };
+    window.addEventListener("walletwisely:navigate", handleCustomNav);
+    return () => window.removeEventListener("walletwisely:navigate", handleCustomNav);
+  }, []);
+
   const renderContent = () => {
     switch (activeTab) {
+      case "income":
+        return <IncomeManager />;
       case "accounts":
         return (
           <div className="space-y-6 max-w-6xl mx-auto">
@@ -254,12 +270,14 @@ const Index = () => {
                     </button>
                   )}
                   {activeTab === "advisor" && "AI Financial Advisor"}
+                  {activeTab === "income" && "Income Management"}
                   {activeTab === "monthly" && "Monthly History & Wrapped"}
                   {activeTab === "accounts" && "My Money & Accounts"}
                   {activeTab === "categories" && "Categories & Inflows"}
                   {activeTab === "subscriptions" && "Subscriptions"}
                   {activeTab !== "dashboard" &&
                     activeTab !== "advisor" &&
+                    activeTab !== "income" &&
                     activeTab !== "monthly" &&
                     activeTab !== "accounts" &&
                     activeTab !== "categories" &&
@@ -344,14 +362,23 @@ const Index = () => {
                 <Building2 className="w-3.5 h-3.5 text-primary" /> Connect Account
               </Button>
 
-              {/* Budget Pacing & Over-spending Alerts */}
-              <BudgetPacingNotification onNavigateTab={handleTabChange} />
+              {/* Budget Pacing, Thresholds (80% / 100%) & Notification Center */}
+              <NotificationCenter onNavigateTab={handleTabChange} />
             </div>
           </div>
         </header>
 
         <div className="p-4 sm:p-6 pb-20 sm:pb-6">
-          {renderContent()}
+          <React.Suspense
+            fallback={
+              <div className="flex flex-col items-center justify-center p-16 gap-3 text-muted-foreground">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-medium">Loading section...</p>
+              </div>
+            }
+          >
+            {renderContent()}
+          </React.Suspense>
         </div>
 
         {/* Mobile Floating Action Button */}
@@ -366,6 +393,9 @@ const Index = () => {
           </button>
         )}
       </main>
+
+      {/* Global Background BudgetGuard Monitor */}
+      <BudgetGuard variant="headless" onNavigateTab={handleTabChange} />
 
       {/* Global Modals */}
       <PersonalizationOnboarding

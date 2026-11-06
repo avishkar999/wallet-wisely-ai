@@ -148,11 +148,14 @@ export function useUpdateRental() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Rental> & { id: string }) => {
-      let query = supabase.from("rentals").update(updates).eq("id", id);
-      if (user?.id) {
-        query = query.eq("user_id", user.id);
-      }
-      const { data, error } = await query.select().single();
+      if (!user) throw new Error("Not authenticated");
+      const { data, error } = await supabase
+        .from("rentals")
+        .update(updates)
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select()
+        .single();
       
       if (error) throw error;
       return data;
@@ -169,11 +172,12 @@ export function useDeleteRental() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      let query = supabase.from("rentals").delete().eq("id", id);
-      if (user?.id) {
-        query = query.eq("user_id", user.id);
-      }
-      const { error } = await query;
+      if (!user) throw new Error("Not authenticated");
+      const { error } = await supabase
+        .from("rentals")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
       
       if (error) throw error;
     },
